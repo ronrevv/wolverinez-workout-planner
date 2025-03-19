@@ -6,6 +6,7 @@ import { WorkoutBuilder } from "@/components/WorkoutBuilder";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils"; // Add this import for the cn utility function
 
 // Define types
 type Exercise = {
