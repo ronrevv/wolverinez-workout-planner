@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, Dumbbell, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -103,18 +104,16 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
         </CardContent>
         
         <CardFooter className="flex justify-between pt-0">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-                  <Info className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">{exercise.description}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full h-8 w-8"
+            asChild
+          >
+            <Link to={`/exercise/${exercise.id}`}>
+              <Info className="h-4 w-4" />
+            </Link>
+          </Button>
           
           <Button 
             variant={isSelected ? "secondary" : "default"}

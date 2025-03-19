@@ -1,8 +1,7 @@
 
 import { useState, useRef } from "react";
-import { Save, Download, Copy, Check, X } from "lucide-react";
+import { Save, Download, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { 
   Dialog, 
   DialogContent, 
@@ -29,14 +28,43 @@ type Workout = {
 
 interface WorkoutExportProps {
   workouts: Workout[];
+  muscleGroups: {
+    name: string;
+    exercises: Exercise[];
+  }[];
 }
 
-export function WorkoutExport({ workouts }: WorkoutExportProps) {
+export function WorkoutExport({ workouts, muscleGroups }: WorkoutExportProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Generate workout text content
+  // Helper function to get muscle group name for an exercise
+  const getMuscleGroupForExercise = (exerciseId: number): string => {
+    for (const group of muscleGroups) {
+      if (group.exercises.some(e => e.id === exerciseId)) {
+        return group.name;
+      }
+    }
+    return "Other";
+  };
+
+  // Group exercises by muscle group
+  const groupExercisesByMuscle = (exercises: Exercise[]) => {
+    const grouped: Record<string, Exercise[]> = {};
+    
+    exercises.forEach(exercise => {
+      const muscleGroup = getMuscleGroupForExercise(exercise.id);
+      if (!grouped[muscleGroup]) {
+        grouped[muscleGroup] = [];
+      }
+      grouped[muscleGroup].push(exercise);
+    });
+    
+    return grouped;
+  };
+
+  // Generate workout text content with muscle group organization
   const generateWorkoutText = () => {
     if (workouts.length === 0) return "No workouts created yet";
     
@@ -46,11 +74,19 @@ export function WorkoutExport({ workouts }: WorkoutExportProps) {
       content += `WORKOUT ${index + 1}: ${workout.name}\n`;
       content += "=====================================\n\n";
       
-      workout.exercises.forEach((exercise, idx) => {
-        content += `${idx + 1}. ${exercise.name}\n`;
-        content += `   Equipment: ${exercise.equipment}\n`;
-        content += `   Difficulty: ${exercise.difficulty}\n`;
-        content += `   Description: ${exercise.description}\n\n`;
+      const groupedExercises = groupExercisesByMuscle(workout.exercises);
+      
+      Object.entries(groupedExercises).forEach(([muscleGroup, exercises]) => {
+        content += `## ${muscleGroup}\n`;
+        
+        exercises.forEach((exercise, idx) => {
+          content += `${idx + 1}. ${exercise.name}\n`;
+          content += `   Equipment: ${exercise.equipment}\n`;
+          content += `   Difficulty: ${exercise.difficulty}\n`;
+          content += `   Description: ${exercise.description}\n\n`;
+        });
+        
+        content += "\n";
       });
       
       content += "\n";
@@ -109,7 +145,7 @@ export function WorkoutExport({ workouts }: WorkoutExportProps) {
       </Button>
       
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-w-[95vw] max-h-[95vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Export Your Workout</DialogTitle>
             <DialogDescription>
@@ -158,3 +194,4 @@ export function WorkoutExport({ workouts }: WorkoutExportProps) {
     </>
   );
 }
+

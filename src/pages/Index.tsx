@@ -5,6 +5,7 @@ import { MuscleGroupTabs } from "@/components/MuscleGroupTabs";
 import { WorkoutBuilder } from "@/components/WorkoutBuilder";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Define types
 type Exercise = {
@@ -28,6 +29,7 @@ const Index = () => {
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const [gymData, setGymData] = useState<GymData | null>(null);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Simulate loading data from an API
@@ -134,11 +136,17 @@ const Index = () => {
               )}
             </div>
             
-            <div className="sticky top-16 lg:h-[calc(100vh-80px)] lg:overflow-y-auto scrollbar-hide">
-              <WorkoutBuilder 
-                selectedExercises={selectedExercises}
-                setSelectedExercises={setSelectedExercises}
-              />
+            <div className={cn(
+              "lg:sticky lg:top-16 lg:h-[calc(100vh-80px)] lg:overflow-y-auto scrollbar-hide",
+              isMobile ? "mt-6" : ""
+            )}>
+              {gymData && (
+                <WorkoutBuilder 
+                  selectedExercises={selectedExercises}
+                  setSelectedExercises={setSelectedExercises}
+                  muscleGroups={gymData.muscle_groups}
+                />
+              )}
             </div>
           </div>
         )}

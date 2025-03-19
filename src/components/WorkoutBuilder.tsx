@@ -22,6 +22,8 @@ import { WorkoutExport } from "./WorkoutExport";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Exercise = {
   id: number;
@@ -29,6 +31,11 @@ type Exercise = {
   equipment: string;
   description: string;
   difficulty: string;
+};
+
+type MuscleGroup = {
+  name: string;
+  exercises: Exercise[];
 };
 
 type Workout = {
@@ -40,12 +47,14 @@ type Workout = {
 interface WorkoutBuilderProps {
   selectedExercises: Exercise[];
   setSelectedExercises: (exercises: Exercise[]) => void;
+  muscleGroups: MuscleGroup[];
 }
 
-export function WorkoutBuilder({ selectedExercises, setSelectedExercises }: WorkoutBuilderProps) {
+export function WorkoutBuilder({ selectedExercises, setSelectedExercises, muscleGroups }: WorkoutBuilderProps) {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [newWorkoutName, setNewWorkoutName] = useState("");
   const [isExpanded, setIsExpanded] = useState(true);
+  const isMobile = useIsMobile();
 
   // Generate unique ID
   const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -84,6 +93,31 @@ export function WorkoutBuilder({ selectedExercises, setSelectedExercises }: Work
   const removeWorkout = (workoutId: string) => {
     setWorkouts(workouts.filter(workout => workout.id !== workoutId));
     toast.success("Workout removed");
+  };
+
+  // Helper function to get muscle group for an exercise
+  const getMuscleGroupForExercise = (exerciseId: number): string => {
+    for (const group of muscleGroups) {
+      if (group.exercises.some(e => e.id === exerciseId)) {
+        return group.name;
+      }
+    }
+    return "Other";
+  };
+
+  // Group exercises by muscle group
+  const groupExercisesByMuscle = (exercises: Exercise[]) => {
+    const grouped: Record<string, Exercise[]> = {};
+    
+    exercises.forEach(exercise => {
+      const muscleGroup = getMuscleGroupForExercise(exercise.id);
+      if (!grouped[muscleGroup]) {
+        grouped[muscleGroup] = [];
+      }
+      grouped[muscleGroup].push(exercise);
+    });
+    
+    return grouped;
   };
 
   // Get difficulty badge color
@@ -130,7 +164,7 @@ export function WorkoutBuilder({ selectedExercises, setSelectedExercises }: Work
       {isExpanded && (
         <div className="p-4">
           <div className="mb-4">
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <Input
                 placeholder="Enter workout name"
                 value={newWorkoutName}
@@ -140,43 +174,60 @@ export function WorkoutBuilder({ selectedExercises, setSelectedExercises }: Work
               <Button 
                 onClick={createWorkout}
                 disabled={selectedExercises.length === 0 || !newWorkoutName.trim()}
+                className="w-full sm:w-auto"
               >
                 Create
               </Button>
             </div>
             
             {selectedExercises.length > 0 ? (
-              <ScrollArea className="h-[150px] rounded-md border p-2">
-                <AnimatePresence>
-                  {selectedExercises.map((exercise) => (
-                    <motion.div
-                      key={exercise.id}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex items-center justify-between py-2 px-3 hover:bg-secondary/50 dark:hover:bg-muted/50 rounded-md"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline"
-                          className={cn("capitalize text-xs", getDifficultyColor(exercise.difficulty))}
-                        >
-                          {exercise.difficulty}
-                        </Badge>
-                        <span className="text-sm font-medium">{exercise.name}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-full"
-                        onClick={() => removeSelectedExercise(exercise.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
+              <ScrollArea className="h-[200px] rounded-md border p-2">
+                <Accordion type="multiple" defaultValue={muscleGroups.map(g => g.name)} className="w-full">
+                  {Object.entries(groupExercisesByMuscle(selectedExercises)).map(([muscleGroup, exercises]) => (
+                    <AccordionItem key={muscleGroup} value={muscleGroup}>
+                      <AccordionTrigger className="py-2 px-1">
+                        <div className="flex items-center">
+                          <span className="font-medium">{muscleGroup}</span>
+                          <Badge variant="secondary" className="ml-2">
+                            {exercises.length}
+                          </Badge>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <AnimatePresence>
+                          {exercises.map((exercise) => (
+                            <motion.div
+                              key={exercise.id}
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="flex items-center justify-between py-2 px-3 hover:bg-secondary/50 dark:hover:bg-muted/50 rounded-md"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  variant="outline"
+                                  className={cn("capitalize text-xs", getDifficultyColor(exercise.difficulty))}
+                                >
+                                  {exercise.difficulty}
+                                </Badge>
+                                <span className="text-sm font-medium">{exercise.name}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full"
+                                onClick={() => removeSelectedExercise(exercise.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </AccordionContent>
+                    </AccordionItem>
                   ))}
-                </AnimatePresence>
+                </Accordion>
               </ScrollArea>
             ) : (
               <div className="h-[150px] flex items-center justify-center border rounded-md bg-secondary/20 dark:bg-muted/20">
@@ -234,21 +285,37 @@ export function WorkoutBuilder({ selectedExercises, setSelectedExercises }: Work
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <ScrollArea className="h-[100px]">
-                            {workout.exercises.map((exercise) => (
-                              <div 
-                                key={exercise.id}
-                                className="flex items-center gap-2 py-1"
-                              >
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn("capitalize text-xs", getDifficultyColor(exercise.difficulty))}
-                                >
-                                  {exercise.difficulty}
-                                </Badge>
-                                <span className="text-sm">{exercise.name}</span>
-                              </div>
-                            ))}
+                          <ScrollArea className={isMobile ? "h-[150px]" : "h-[100px]"}>
+                            <Accordion type="multiple" defaultValue={muscleGroups.map(g => g.name)} className="w-full">
+                              {Object.entries(groupExercisesByMuscle(workout.exercises)).map(([muscleGroup, exercises]) => (
+                                <AccordionItem key={muscleGroup} value={muscleGroup}>
+                                  <AccordionTrigger className="py-2 px-1">
+                                    <div className="flex items-center">
+                                      <span className="font-medium">{muscleGroup}</span>
+                                      <Badge variant="secondary" className="ml-2">
+                                        {exercises.length}
+                                      </Badge>
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    {exercises.map((exercise) => (
+                                      <div 
+                                        key={exercise.id}
+                                        className="flex items-center gap-2 py-1"
+                                      >
+                                        <Badge 
+                                          variant="outline" 
+                                          className={cn("capitalize text-xs", getDifficultyColor(exercise.difficulty))}
+                                        >
+                                          {exercise.difficulty}
+                                        </Badge>
+                                        <span className="text-sm">{exercise.name}</span>
+                                      </div>
+                                    ))}
+                                  </AccordionContent>
+                                </AccordionItem>
+                              ))}
+                            </Accordion>
                           </ScrollArea>
                         </CardContent>
                       </Card>
@@ -257,7 +324,7 @@ export function WorkoutBuilder({ selectedExercises, setSelectedExercises }: Work
                 </AnimatePresence>
                 
                 <div className="pt-2">
-                  <WorkoutExport workouts={workouts} />
+                  <WorkoutExport workouts={workouts} muscleGroups={muscleGroups} />
                 </div>
               </div>
             ) : (
