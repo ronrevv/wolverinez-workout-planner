@@ -4,9 +4,9 @@ import { Navbar } from "@/components/Navbar";
 import { MuscleGroupTabs } from "@/components/MuscleGroupTabs";
 import { WorkoutBuilder } from "@/components/WorkoutBuilder";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Dumbbell } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils"; // Add this import for the cn utility function
+import { cn } from "@/lib/utils";
 
 // Define types
 type Exercise = {
@@ -99,35 +99,77 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.5 }
+    }
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
       <Navbar />
       
       <main className="container mx-auto mt-20 px-4 pb-16">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 text-center"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-12 text-center"
         >
-          <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70 mb-2">
+          <div className="inline-block relative mb-4">
+            <Dumbbell className="h-16 w-16 text-primary mx-auto" />
+            <motion.div 
+              className="absolute -inset-4 rounded-full bg-primary/20 z-[-1]"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: [0.8, 1.2, 0.8], opacity: [0, 0.5, 0] }}
+              transition={{ duration: 3, repeat: Infinity, repeatType: "loop" }}
+            />
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold gradient-text mb-4">
             Wolverinez
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Build your custom workout plan with ease
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            Build your custom workout plan with ease and achieve your fitness goals faster
           </p>
         </motion.div>
         
         {loading ? (
           <div className="h-[400px] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-10 w-10 text-primary animate-spin" />
+            <motion.div 
+              className="flex flex-col items-center gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Loader2 className="h-12 w-12 text-primary animate-spin" />
               <p className="text-muted-foreground">Loading exercise database...</p>
-            </div>
+            </motion.div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-6">
-            <div className="lg:col-span-2 mb-6 lg:mb-0">
+          <motion.div 
+            className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div 
+              className="lg:col-span-2 mb-6 lg:mb-0"
+              variants={itemVariants}
+            >
               {gymData && (
                 <MuscleGroupTabs 
                   muscleGroups={gymData.muscle_groups} 
@@ -135,12 +177,15 @@ const Index = () => {
                   setSelectedExercises={setSelectedExercises}
                 />
               )}
-            </div>
+            </motion.div>
             
-            <div className={cn(
-              "lg:sticky lg:top-16 lg:h-[calc(100vh-80px)] lg:overflow-y-auto scrollbar-hide",
-              isMobile ? "mt-6" : ""
-            )}>
+            <motion.div 
+              className={cn(
+                "lg:sticky lg:top-20 lg:h-[calc(100vh-100px)] lg:overflow-y-auto scrollbar-hide",
+                isMobile ? "mt-6" : ""
+              )}
+              variants={itemVariants}
+            >
               {gymData && (
                 <WorkoutBuilder 
                   selectedExercises={selectedExercises}
@@ -148,8 +193,8 @@ const Index = () => {
                   muscleGroups={gymData.muscle_groups}
                 />
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
       </main>
     </div>

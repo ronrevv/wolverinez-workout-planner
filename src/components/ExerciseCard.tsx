@@ -57,40 +57,46 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.03 }}
       className="h-full"
     >
       <Card 
         className={cn(
-          "h-full overflow-hidden transition-all duration-300 ease-in-out glass-card",
+          "h-full overflow-hidden transition-all duration-300 ease-in-out glass-card card-highlight",
           isSelected ? "ring-2 ring-primary/50 bg-primary/5 dark:bg-primary/10" : "",
           isHovered ? "translate-y-[-4px] shadow-lg" : ""
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <Badge 
-              variant="outline"
-              className={cn("capitalize font-medium border", 
-                getDifficultyColor(exercise.difficulty)
-              )}
+        <CardHeader className="pb-2 relative">
+          {isSelected && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              className="absolute top-3 right-3"
             >
-              {exercise.difficulty}
-            </Badge>
-            
-            {isSelected && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              >
+              <div className="bg-primary/10 rounded-full p-1">
                 <CheckCircle className="h-5 w-5 text-primary" />
-              </motion.div>
+              </div>
+            </motion.div>
+          )}
+          
+          <Badge 
+            variant="outline"
+            className={cn("capitalize font-medium border w-fit", 
+              getDifficultyColor(exercise.difficulty)
             )}
-          </div>
-          <CardTitle className="text-xl mt-2 line-clamp-1">{exercise.name}</CardTitle>
+          >
+            {exercise.difficulty}
+          </Badge>
+          
+          <CardTitle className="text-xl mt-2 line-clamp-1 group">
+            {exercise.name}
+            <span className="block h-0.5 w-0 group-hover:w-full bg-primary/60 transition-all duration-300" />
+          </CardTitle>
+          
           <CardDescription className="flex items-center gap-1 text-muted-foreground">
             <Dumbbell className="h-4 w-4" />
             <span>{exercise.equipment}</span>
@@ -107,7 +113,7 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
           <Button 
             variant="ghost" 
             size="icon" 
-            className="rounded-full h-8 w-8"
+            className="rounded-full h-8 w-8 hover:bg-primary/20"
             asChild
           >
             <Link to={`/exercise/${exercise.id}`}>
@@ -124,7 +130,23 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
             )}
             onClick={() => onSelect(exercise)}
           >
-            {isSelected ? "Selected" : "Select"}
+            {isSelected ? (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Selected
+              </motion.span>
+            ) : (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                Select
+              </motion.span>
+            )}
           </Button>
         </CardFooter>
       </Card>
