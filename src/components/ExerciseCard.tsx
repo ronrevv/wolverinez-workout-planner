@@ -72,6 +72,12 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
     onSelect(exercise);
   };
 
+  const handleInfoClick = (e: React.MouseEvent) => {
+    // Ensure the info button click doesn't trigger other events
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -146,16 +152,15 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
         </CardContent>
         
         <CardFooter className="flex justify-between pt-0">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full h-8 w-8 hover:bg-primary/20"
-            asChild
-          >
-            <Link to={`/exercise/${exercise.id}`}>
+          <Link to={`/exercise/${exercise.id}`} onClick={handleInfoClick}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-8 w-8 hover:bg-primary/20"
+            >
               <Info className="h-4 w-4" />
-            </Link>
-          </Button>
+            </Button>
+          </Link>
           
           <Button 
             variant={isSelected ? "secondary" : "default"}

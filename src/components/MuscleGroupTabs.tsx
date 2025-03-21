@@ -56,6 +56,7 @@ export function MuscleGroupTabs({
   }, [searchQuery, muscleGroups]);
 
   const toggleExerciseSelection = (exercise: Exercise) => {
+    console.log("Toggling exercise:", exercise.name);
     if (selectedExercises.some(e => e.id === exercise.id)) {
       setSelectedExercises(selectedExercises.filter(e => e.id !== exercise.id));
     } else {
