@@ -66,6 +66,12 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
     }
   };
 
+  const handleSelect = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSelect(exercise);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -158,7 +164,7 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
               "transition-all duration-300",
               isSelected ? "bg-primary/90 hover:bg-primary/80" : ""
             )}
-            onClick={() => onSelect(exercise)}
+            onClick={handleSelect}
           >
             {isSelected ? (
               <motion.span

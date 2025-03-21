@@ -78,7 +78,7 @@ const ExerciseDetail = () => {
       try {
         // Simulate loading data from an API
         setTimeout(() => {
-          // This is the gym exercise data - same as in Index.tsx
+          // This is the gym exercise data - same as in WorkoutPlanner.tsx
           const data: GymData = {
             muscle_groups: [
               {
