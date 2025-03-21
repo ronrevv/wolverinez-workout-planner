@@ -18,10 +18,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ArrowLeft, Video, Image as ImageIcon, Dumbbell, Activity } from "lucide-react";
+import { Loader2, ArrowLeft, Video, Image as ImageIcon, Dumbbell, Activity, Music, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 type Exercise = {
   id: number;
@@ -50,6 +51,12 @@ const mockMediaByExerciseId = (id: number) => ({
   videos: [
     "https://www.youtube.com/embed/dQw4w9WgXcQ",
     "https://www.youtube.com/embed/9bZkp7q19f0"
+  ],
+  suggestedSongs: [
+    { title: "Eye of the Tiger", artist: "Survivor", youtubeId: "btPJPFnesV4" },
+    { title: "Till I Collapse", artist: "Eminem", youtubeId: "gY9C0ItyO0E" },
+    { title: "Stronger", artist: "Kanye West", youtubeId: "PsO6ZnUZI0g" },
+    { title: "Can't Hold Us", artist: "Macklemore", youtubeId: "2zNSgSzhBfM" }
   ]
 });
 
@@ -174,6 +181,19 @@ const ExerciseDetail = () => {
     }
   };
 
+  const handleAddToWorkout = () => {
+    toast.success(`Added ${exercise?.name} to your workout plan`, {
+      description: "Go to the workout planner to see your selected exercises"
+    });
+  };
+
+  const playSong = (youtubeId: string, title: string) => {
+    window.open(`https://www.youtube.com/watch?v=${youtubeId}`, '_blank');
+    toast.success(`Playing "${title}" on YouTube`, {
+      description: "Opening YouTube in a new tab"
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -196,7 +216,7 @@ const ExerciseDetail = () => {
           <h2 className="text-2xl font-bold">Exercise not found</h2>
           <p className="text-muted-foreground mt-2">The exercise you're looking for doesn't exist.</p>
           <Button asChild className="mt-6">
-            <Link to="/">
+            <Link to="/workout-planner">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Workout Planner
             </Link>
@@ -213,7 +233,7 @@ const ExerciseDetail = () => {
       <div className="container mx-auto mt-20 px-4 pb-16">
         <Button 
           variant="outline" 
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/workout-planner")}
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -271,7 +291,10 @@ const ExerciseDetail = () => {
                 </div>
               </div>
               
-              <Button className="w-full mt-6">
+              <Button 
+                className="w-full mt-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                onClick={handleAddToWorkout}
+              >
                 Add to Workout
               </Button>
             </div>
@@ -320,6 +343,37 @@ const ExerciseDetail = () => {
                       allowFullScreen
                     ></iframe>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Suggested Songs */}
+            <div className="bg-card rounded-lg border shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Music className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-bold">Workout Music</h2>
+              </div>
+              
+              <div className="space-y-2">
+                {media.suggestedSongs.map((song, idx) => (
+                  <motion.div 
+                    key={idx}
+                    whileHover={{ scale: 1.01, backgroundColor: "rgba(var(--primary), 0.05)" }}
+                    className="p-3 rounded-md flex justify-between items-center border border-border/50 hover:border-primary/30 transition-all duration-300"
+                  >
+                    <div>
+                      <p className="font-medium">{song.title}</p>
+                      <p className="text-sm text-muted-foreground">{song.artist}</p>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="rounded-full h-9 w-9 p-0 flex items-center justify-center hover:bg-primary/20 hover:text-primary hover:border-primary/30"
+                      onClick={() => playSong(song.youtubeId, song.title)}
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
                 ))}
               </div>
             </div>
