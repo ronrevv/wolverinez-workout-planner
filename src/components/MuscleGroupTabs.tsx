@@ -1,8 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExerciseCard } from "./ExerciseCard";
 import { motion } from "framer-motion";
+import { Input } from "./ui/input";
+import { Search, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Exercise = {
   id: number;
@@ -29,6 +32,28 @@ export function MuscleGroupTabs({
   setSelectedExercises 
 }: MuscleGroupTabsProps) {
   const [activeTab, setActiveTab] = useState(muscleGroups[0]?.name || "");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredExercises, setFilteredExercises] = useState<{[key: string]: Exercise[]}>({});
+
+  // Filter exercises based on search query
+  useEffect(() => {
+    const filtered: {[key: string]: Exercise[]} = {};
+    
+    muscleGroups.forEach(group => {
+      if (searchQuery.trim() === "") {
+        filtered[group.name] = group.exercises;
+      } else {
+        filtered[group.name] = group.exercises.filter(exercise => 
+          exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          exercise.equipment.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          exercise.difficulty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          exercise.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+    });
+    
+    setFilteredExercises(filtered);
+  }, [searchQuery, muscleGroups]);
 
   const toggleExerciseSelection = (exercise: Exercise) => {
     if (selectedExercises.some(e => e.id === exercise.id)) {
@@ -42,6 +67,10 @@ export function MuscleGroupTabs({
     return selectedExercises.some(e => e.id === id);
   };
 
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+
   return (
     <Tabs 
       defaultValue={activeTab} 
@@ -50,14 +79,42 @@ export function MuscleGroupTabs({
       className="w-full"
     >
       <div className="sticky top-16 z-20 bg-background/95 backdrop-blur-sm pt-4 pb-2 border-b border-border">
+        <div className="mb-3 relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search exercises, equipment, difficulty..."
+              className="pl-10 pr-10 bg-secondary/50 border-secondary focus-visible:ring-primary/30"
+            />
+            {searchQuery && (
+              <button 
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={clearSearch}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+        
         <TabsList className="w-full flex overflow-x-auto justify-start gap-2 h-auto p-1 bg-secondary/50 dark:bg-muted/50 scrollbar-hide">
           {muscleGroups.map((group) => (
             <TabsTrigger
               key={group.name}
               value={group.name}
-              className="px-4 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className={cn(
+                "px-4 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+                filteredExercises[group.name]?.length === 0 && searchQuery ? "opacity-50" : ""
+              )}
             >
               {group.name}
+              {searchQuery && filteredExercises[group.name] && (
+                <span className="ml-2 bg-primary/20 text-xs px-1.5 py-0.5 rounded-full">
+                  {filteredExercises[group.name].length}
+                </span>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -75,16 +132,22 @@ export function MuscleGroupTabs({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {group.exercises.map((exercise) => (
-                <ExerciseCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  isSelected={isExerciseSelected(exercise.id)}
-                  onSelect={toggleExerciseSelection}
-                />
-              ))}
-            </div>
+            {filteredExercises[group.name]?.length === 0 && searchQuery ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No exercises found matching "{searchQuery}"</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(filteredExercises[group.name] || group.exercises).map((exercise) => (
+                  <ExerciseCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    isSelected={isExerciseSelected(exercise.id)}
+                    onSelect={toggleExerciseSelection}
+                  />
+                ))}
+              </div>
+            )}
           </motion.div>
         </TabsContent>
       ))}

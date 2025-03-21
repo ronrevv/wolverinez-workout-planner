@@ -1,6 +1,6 @@
 
 import { ThemeToggle } from "./ThemeToggle";
-import { Dumbbell, Info, Users, LogIn, Star, BookOpen, Menu, X } from "lucide-react";
+import { Dumbbell, Info, Users, LogIn, Star, BookOpen, Menu, X, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -53,6 +53,10 @@ export function Navbar() {
               About
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
+            <Link to="/workout-planner" className="text-sm font-medium hover:text-primary transition-colors relative group">
+              Workout Planner
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+            </Link>
             <Link to="/membership" className="text-sm font-medium hover:text-primary transition-colors relative group">
               Membership
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
@@ -103,6 +107,13 @@ export function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   About
+                </Link>
+                <Link 
+                  to="/workout-planner" 
+                  className="text-sm font-medium p-2 hover:bg-primary/10 rounded-md transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Workout Planner
                 </Link>
                 <Link 
                   to="/membership" 

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle, Dumbbell, Info } from "lucide-react";
+import { CheckCircle, Dumbbell, Info, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
   Card, 
@@ -52,6 +52,20 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
     }
   };
 
+  // Get estimated time based on difficulty
+  const getEstimatedTime = (difficulty: string) => {
+    switch (difficulty) {
+      case "beginner":
+        return "3-5 min";
+      case "intermediate":
+        return "5-8 min";
+      case "advanced":
+        return "8-12 min";
+      default:
+        return "5 min";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -83,14 +97,30 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
             </motion.div>
           )}
           
-          <Badge 
-            variant="outline"
-            className={cn("capitalize font-medium border w-fit", 
-              getDifficultyColor(exercise.difficulty)
-            )}
-          >
-            {exercise.difficulty}
-          </Badge>
+          <div className="flex justify-between items-start">
+            <Badge 
+              variant="outline"
+              className={cn("capitalize font-medium border w-fit", 
+                getDifficultyColor(exercise.difficulty)
+              )}
+            >
+              {exercise.difficulty}
+            </Badge>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <span>{getEstimatedTime(exercise.difficulty)}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Estimated time per set</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           
           <CardTitle className="text-xl mt-2 line-clamp-1 group">
             {exercise.name}
