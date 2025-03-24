@@ -70,12 +70,26 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
     e.preventDefault();
     e.stopPropagation();
     onSelect(exercise);
+    console.log("Exercise selected:", exercise.name);
   };
 
   const handleInfoClick = (e: React.MouseEvent) => {
     // Ensure the info button click doesn't trigger other events
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  // Add a card click handler to make the entire card clickable for selection
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger card click if clicking on link or button elements
+    if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button[class*="info"]')) {
+      return;
+    }
+    
+    e.preventDefault();
+    e.stopPropagation();
+    onSelect(exercise);
+    console.log("Card clicked for:", exercise.name);
   };
 
   return (
@@ -88,12 +102,13 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
     >
       <Card 
         className={cn(
-          "h-full overflow-hidden transition-all duration-300 ease-in-out glass-card card-highlight",
+          "h-full overflow-hidden transition-all duration-300 ease-in-out glass-card card-highlight cursor-pointer",
           isSelected ? "ring-2 ring-primary/50 bg-primary/5 dark:bg-primary/10" : "",
           isHovered ? "translate-y-[-4px] shadow-lg" : ""
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-2 relative">
           {isSelected && (
@@ -152,11 +167,11 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
         </CardContent>
         
         <CardFooter className="flex justify-between pt-0">
-          <Link to={`/exercise/${exercise.id}`} onClick={handleInfoClick}>
+          <Link to={`/exercise/${exercise.id}`} onClick={handleInfoClick} className="z-10">
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full h-8 w-8 hover:bg-primary/20"
+              className="rounded-full h-8 w-8 hover:bg-primary/20 info-button"
             >
               <Info className="h-4 w-4" />
             </Button>
@@ -166,7 +181,7 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
             variant={isSelected ? "secondary" : "default"}
             size="sm" 
             className={cn(
-              "transition-all duration-300",
+              "transition-all duration-300 z-10",
               isSelected ? "bg-primary/90 hover:bg-primary/80" : ""
             )}
             onClick={handleSelect}

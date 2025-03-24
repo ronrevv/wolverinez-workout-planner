@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Input } from "./ui/input";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type Exercise = {
   id: number;
@@ -59,8 +60,10 @@ export function MuscleGroupTabs({
     console.log("Toggling exercise:", exercise.name);
     if (selectedExercises.some(e => e.id === exercise.id)) {
       setSelectedExercises(selectedExercises.filter(e => e.id !== exercise.id));
+      toast.info(`Removed ${exercise.name} from selection`);
     } else {
       setSelectedExercises([...selectedExercises, exercise]);
+      toast.success(`Added ${exercise.name} to selection`);
     }
   };
 
