@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, Dumbbell, Info, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
   
   // Get badge color based on difficulty
   const getDifficultyColor = (difficulty: string) => {
@@ -74,15 +75,17 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
   };
 
   const handleInfoClick = (e: React.MouseEvent) => {
-    // Ensure the info button click doesn't trigger other events
     e.preventDefault();
     e.stopPropagation();
+    // Navigate programmatically to ensure the route change happens
+    navigate(`/exercise/${exercise.id}`);
+    console.log("Navigating to exercise details:", exercise.id);
   };
 
   // Add a card click handler to make the entire card clickable for selection
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't trigger card click if clicking on link or button elements
-    if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button[class*="info"]')) {
+    if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button')) {
       return;
     }
     
@@ -167,15 +170,14 @@ export function ExerciseCard({ exercise, isSelected, onSelect }: ExerciseCardPro
         </CardContent>
         
         <CardFooter className="flex justify-between pt-0">
-          <Link to={`/exercise/${exercise.id}`} onClick={handleInfoClick} className="z-10">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full h-8 w-8 hover:bg-primary/20 info-button"
-            >
-              <Info className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full h-8 w-8 hover:bg-primary/20 info-button z-10"
+            onClick={handleInfoClick}
+          >
+            <Info className="h-4 w-4" />
+          </Button>
           
           <Button 
             variant={isSelected ? "secondary" : "default"}
