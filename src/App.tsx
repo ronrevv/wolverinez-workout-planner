@@ -13,6 +13,8 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import AdvancedPlans from "./pages/AdvancedPlans";
 import DietRequest from "./pages/DietRequest";
+import BMICalculator from "./pages/BMICalculator";
+import WorkoutPlans from "./pages/WorkoutPlans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,8 @@ const App = () => (
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/advanced-plans" element={<AdvancedPlans />} />
           <Route path="/diet-request" element={<DietRequest />} />
+          <Route path="/bmi-calculator" element={<BMICalculator />} />
+          <Route path="/workout-plans" element={<WorkoutPlans />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

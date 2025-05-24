@@ -9,7 +9,146 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bmi_calculations: {
+        Row: {
+          bmi_category: string
+          bmi_value: number
+          calculated_at: string
+          height: number
+          id: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          bmi_category: string
+          bmi_value: number
+          calculated_at?: string
+          height: number
+          id?: string
+          user_id: string
+          weight: number
+        }
+        Update: {
+          bmi_category?: string
+          bmi_value?: number
+          calculated_at?: string
+          height?: number
+          id?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          activity_level: string | null
+          age: number | null
+          created_at: string
+          fitness_goal: string | null
+          gender: string | null
+          height: number | null
+          id: string
+          name: string | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          activity_level?: string | null
+          age?: number | null
+          created_at?: string
+          fitness_goal?: string | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          activity_level?: string | null
+          age?: number | null
+          created_at?: string
+          fitness_goal?: string | null
+          gender?: string | null
+          height?: number | null
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      user_workout_assignments: {
+        Row: {
+          assigned_at: string
+          completed_at: string | null
+          id: string
+          is_active: boolean | null
+          user_id: string
+          workout_plan_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          completed_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          user_id: string
+          workout_plan_id: string
+        }
+        Update: {
+          assigned_at?: string
+          completed_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          user_id?: string
+          workout_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_workout_assignments_workout_plan_id_fkey"
+            columns: ["workout_plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_weeks: number | null
+          exercises: Json
+          fitness_goal: string | null
+          id: string
+          level: number | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_weeks?: number | null
+          exercises: Json
+          fitness_goal?: string | null
+          id?: string
+          level?: number | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_weeks?: number | null
+          exercises?: Json
+          fitness_goal?: string | null
+          id?: string
+          level?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
