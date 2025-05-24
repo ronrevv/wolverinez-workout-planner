@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,31 +15,38 @@ import DietRequest from "./pages/DietRequest";
 import BMICalculator from "./pages/BMICalculator";
 import WorkoutPlans from "./pages/WorkoutPlans";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./contexts/AuthContext";
+import Profile from "./pages/Profile";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/workout-planner" element={<WorkoutPlanner />} />
-          <Route path="/exercise/:id" element={<ExerciseDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/membership" element={<Membership />} />
-          <Route path="/sign-in" element={<SignIn />} />
-          <Route path="/sign-up" element={<SignUp />} />
-          <Route path="/advanced-plans" element={<AdvancedPlans />} />
-          <Route path="/diet-request" element={<DietRequest />} />
-          <Route path="/bmi-calculator" element={<BMICalculator />} />
-          <Route path="/workout-plans" element={<WorkoutPlans />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/workout-planner" element={<WorkoutPlanner />} />
+            <Route path="/exercise/:id" element={<ExerciseDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/membership" element={<Membership />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/advanced-plans" element={<AdvancedPlans />} />
+            <Route path="/diet-request" element={<DietRequest />} />
+            <Route path="/bmi-calculator" element={<BMICalculator />} />
+            <Route path="/workout-plans" element={<WorkoutPlans />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

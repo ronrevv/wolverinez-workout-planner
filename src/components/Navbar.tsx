@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -62,12 +61,12 @@ export function Navbar() {
           <div className="flex items-center space-x-4">
             <ThemeToggle />
             <div className="hidden md:flex items-center space-x-2">
-              <Link to="/sign-in">
+              <Link to="/profile">
                 <Button variant="ghost" size="sm">
-                  Sign In
+                  Profile
                 </Button>
               </Link>
-              <Link to="/sign-up">
+              <Link to="/auth">
                 <Button size="sm">Get Started</Button>
               </Link>
             </div>
@@ -113,12 +112,12 @@ export function Navbar() {
                 );
               })}
               <div className="flex flex-col space-y-2 pt-2 border-t border-border/40">
-                <Link to="/sign-in" onClick={() => setIsOpen(false)}>
+                <Link to="/profile" onClick={() => setIsOpen(false)}>
                   <Button variant="ghost" size="sm" className="w-full justify-start">
-                    Sign In
+                    Profile
                   </Button>
                 </Link>
-                <Link to="/sign-up" onClick={() => setIsOpen(false)}>
+                <Link to="/auth" onClick={() => setIsOpen(false)}>
                   <Button size="sm" className="w-full">
                     Get Started
                   </Button>

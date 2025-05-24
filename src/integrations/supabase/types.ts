@@ -39,6 +39,83 @@ export type Database = {
         }
         Relationships: []
       }
+      gym_attendance: {
+        Row: {
+          attendance_date: string
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string
+          id: string
+          user_id: string
+          workout_session_id: string | null
+        }
+        Insert: {
+          attendance_date: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          id?: string
+          user_id: string
+          workout_session_id?: string | null
+        }
+        Update: {
+          attendance_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
+          workout_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gym_attendance_workout_session_id_fkey"
+            columns: ["workout_session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          gym_membership_end: string | null
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          gym_membership_end?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          gym_membership_end?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           activity_level: string | null
@@ -116,6 +193,44 @@ export type Database = {
           },
         ]
       }
+      weight_logs: {
+        Row: {
+          created_at: string
+          id: string
+          log_date: string
+          log_type: string | null
+          user_id: string
+          weight: number
+          workout_session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          log_date: string
+          log_type?: string | null
+          user_id: string
+          weight: number
+          workout_session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          log_date?: string
+          log_type?: string | null
+          user_id?: string
+          weight?: number
+          workout_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_logs_workout_session_id_fkey"
+            columns: ["workout_session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workout_plans: {
         Row: {
           created_at: string
@@ -149,12 +264,59 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          muscles_trained: string[]
+          notes: string | null
+          post_workout_weight: number | null
+          pre_workout_weight: number | null
+          updated_at: string
+          user_id: string
+          workout_date: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          muscles_trained: string[]
+          notes?: string | null
+          post_workout_weight?: number | null
+          pre_workout_weight?: number | null
+          updated_at?: string
+          user_id: string
+          workout_date: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          muscles_trained?: string[]
+          notes?: string | null
+          post_workout_weight?: number | null
+          pre_workout_weight?: number | null
+          updated_at?: string
+          user_id?: string
+          workout_date?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_workout_stats: {
+        Args: { p_user_id: string; p_start_date: string; p_end_date: string }
+        Returns: {
+          total_workouts: number
+          total_gym_days: number
+          weight_change: number
+          avg_workout_duration: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
