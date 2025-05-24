@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Dumbbell, User, Mail, Lock } from "lucide-react";
+import { Dumbbell, User, Mail, Lock, UserCheck, Shield } from "lucide-react";
 
 const Auth = () => {
   const [signInEmail, setSignInEmail] = useState('');
@@ -42,6 +42,23 @@ const Auth = () => {
       await signUp(signUpEmail, signUpPassword, signUpName);
     } catch (error) {
       console.error('Sign up error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (type: 'admin' | 'user') => {
+    setLoading(true);
+    try {
+      const credentials = {
+        admin: { email: 'admin@fitnesspro.com', password: 'admin123' },
+        user: { email: 'user@fitnesspro.com', password: 'user123' }
+      };
+      
+      await signIn(credentials[type].email, credentials[type].password);
+      navigate('/');
+    } catch (error) {
+      console.error('Demo login error:', error);
     } finally {
       setLoading(false);
     }
@@ -116,6 +133,33 @@ const Auth = () => {
                       {loading ? "Signing in..." : "Sign In"}
                     </Button>
                   </form>
+                  
+                  <div className="my-4 flex items-center">
+                    <div className="flex-grow h-px bg-muted"></div>
+                    <span className="px-3 text-xs text-muted-foreground">OR TRY DEMO</span>
+                    <div className="flex-grow h-px bg-muted"></div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Button 
+                      onClick={() => handleDemoLogin('admin')} 
+                      variant="outline" 
+                      className="w-full hover:bg-orange-50 hover:border-orange-300"
+                      disabled={loading}
+                    >
+                      <Shield className="mr-2 h-4 w-4 text-orange-600" />
+                      Demo Admin Login
+                    </Button>
+                    <Button 
+                      onClick={() => handleDemoLogin('user')} 
+                      variant="outline" 
+                      className="w-full hover:bg-blue-50 hover:border-blue-300"
+                      disabled={loading}
+                    >
+                      <UserCheck className="mr-2 h-4 w-4 text-blue-600" />
+                      Demo User Login
+                    </Button>
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="signup">
