@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +13,12 @@ interface UserPlan {
   id: string;
   name: string;
   description: string | null;
-  exercises: any;
+  exercises: any[];
   level: number | null;
   fitness_goal: string | null;
   duration_weeks: number | null;
   created_at: string;
-  user_id: string;
+  user_id: string | null;
 }
 
 const UserWorkoutPlans = () => {
