@@ -59,13 +59,20 @@ const ImprovedWorkoutPlanner = () => {
   const fetchExercises = async (muscleGroup: string) => {
     setLoadingExercises(true);
     try {
+      console.log('Fetching exercises for muscle group:', muscleGroup);
+      
       const { data, error } = await supabase.functions.invoke('fetch-exercises', {
         body: { muscleGroup }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       
+      console.log('Received exercises data:', data);
       setAvailableExercises(data.exercises || []);
+      
       toast({
         title: "Success",
         description: `Loaded ${data.exercises?.length || 0} exercises for ${muscleGroup}`,
@@ -77,7 +84,6 @@ const ImprovedWorkoutPlanner = () => {
         description: "Failed to fetch exercises. Using fallback data.",
         variant: "destructive"
       });
-      // Set fallback exercises
       setAvailableExercises([]);
     } finally {
       setLoadingExercises(false);
@@ -97,7 +103,6 @@ const ImprovedWorkoutPlanner = () => {
   const removeWorkoutDay = (dayIndex: number) => {
     if (workoutDays.length > 1) {
       const updatedDays = workoutDays.filter((_, index) => index !== dayIndex);
-      // Reorder day numbers
       const reorderedDays = updatedDays.map((day, index) => ({
         ...day,
         day: index + 1,
@@ -167,6 +172,15 @@ const ImprovedWorkoutPlanner = () => {
       return;
     }
 
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create workout plans",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Validate that non-rest days have exercises
     const invalidDays = workoutDays.filter(day => !day.restDay && day.exercises.length === 0);
     if (invalidDays.length > 0) {
@@ -180,21 +194,40 @@ const ImprovedWorkoutPlanner = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase
+      console.log('Saving workout plan with data:', {
+        name: planName,
+        description: planDescription,
+        created_by: user.id,
+        exercises: workoutDays,
+        duration_weeks: durationWeeks,
+        difficulty_level: difficultyLevel,
+        target_muscle_groups: workoutDays
+          .filter(day => !day.restDay && day.targetMuscleGroup)
+          .map(day => day.targetMuscleGroup)
+      });
+
+      const { data, error } = await supabase
         .from('admin_workout_plans')
         .insert({
           name: planName,
-          description: planDescription,
-          created_by: user?.id,
-          exercises: workoutDays as any,
+          description: planDescription || '',
+          created_by: user.id,
+          exercises: workoutDays,
           duration_weeks: durationWeeks,
           difficulty_level: difficultyLevel,
           target_muscle_groups: workoutDays
             .filter(day => !day.restDay && day.targetMuscleGroup)
             .map(day => day.targetMuscleGroup)
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving workout plan:', error);
+        throw error;
+      }
+
+      console.log('Workout plan saved successfully:', data);
 
       toast({
         title: "Success",
@@ -210,11 +243,11 @@ const ImprovedWorkoutPlanner = () => {
         { day: 1, name: 'Day 1', targetMuscleGroup: '', exercises: [], restDay: false }
       ]);
       setAvailableExercises([]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving workout plan:', error);
       toast({
         title: "Error",
-        description: "Failed to save workout plan",
+        description: error.message || "Failed to save workout plan",
         variant: "destructive"
       });
     } finally {
