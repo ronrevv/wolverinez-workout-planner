@@ -457,6 +457,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: string
@@ -469,6 +473,10 @@ export type Database = {
           weight_change: number
           avg_workout_duration: number
         }[]
+      }
+      is_admin: {
+        Args: { user_uuid?: string }
+        Returns: boolean
       }
       user_has_site_access: {
         Args: { user_id: string }

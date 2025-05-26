@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ const AssignedWorkoutPlans = () => {
 
   const parseExercises = (exercisesData: any): WorkoutDay[] => {
     try {
+      console.log('Parsing exercises data:', exercisesData);
       // If exercisesData is already an array, return it
       if (Array.isArray(exercisesData)) {
         return exercisesData as WorkoutDay[];
@@ -73,6 +75,8 @@ const AssignedWorkoutPlans = () => {
 
   const loadAssignedPlans = async () => {
     try {
+      console.log('Loading assigned plans for user:', user?.id);
+      
       const { data, error } = await supabase
         .from('workout_plan_assignments')
         .select(`
@@ -91,19 +95,28 @@ const AssignedWorkoutPlans = () => {
         .eq('assigned_to_user', user?.id)
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading assigned plans:', error);
+        throw error;
+      }
 
-      const formattedPlans = data?.map(assignment => ({
-        id: assignment.id,
-        assigned_at: assignment.assigned_at,
-        status: assignment.status,
-        notes: assignment.notes || '',
-        plan: {
-          ...assignment.admin_workout_plans,
-          exercises: parseExercises(assignment.admin_workout_plans.exercises)
-        }
-      })) || [];
+      console.log('Raw assigned plans data:', data);
 
+      const formattedPlans = data?.map(assignment => {
+        console.log('Processing assignment:', assignment);
+        return {
+          id: assignment.id,
+          assigned_at: assignment.assigned_at,
+          status: assignment.status,
+          notes: assignment.notes || '',
+          plan: {
+            ...assignment.admin_workout_plans,
+            exercises: parseExercises(assignment.admin_workout_plans?.exercises)
+          }
+        };
+      }) || [];
+
+      console.log('Formatted plans:', formattedPlans);
       setAssignedPlans(formattedPlans);
     } catch (error) {
       console.error('Error loading assigned plans:', error);
@@ -149,7 +162,7 @@ const AssignedWorkoutPlans = () => {
         <p className="text-muted-foreground">Rest Day</p>
       ) : (
         <div className="space-y-2">
-          {dayData.exercises.map((exercise: Exercise, exerciseIndex: number) => (
+          {dayData.exercises?.map((exercise: Exercise, exerciseIndex: number) => (
             <div key={exerciseIndex} className="text-sm">
               <span className="font-medium">{exercise.name}</span>
               {exercise.sets && exercise.reps && (
@@ -168,7 +181,7 @@ const AssignedWorkoutPlans = () => {
                 </div>
               )}
             </div>
-          ))}
+          )) || <p className="text-muted-foreground text-sm">No exercises defined</p>}
         </div>
       )}
     </div>
@@ -277,8 +290,14 @@ const AssignedWorkoutPlans = () => {
 
                 {expandedPlan === assignment.id && (
                   <div className="grid gap-3 max-h-96 overflow-y-auto">
-                    {assignment.plan?.exercises?.map((day: WorkoutDay, dayIndex: number) => 
-                      renderWorkoutDay(day, dayIndex)
+                    {assignment.plan?.exercises?.length > 0 ? (
+                      assignment.plan.exercises.map((day: WorkoutDay, dayIndex: number) => 
+                        renderWorkoutDay(day, dayIndex)
+                      )
+                    ) : (
+                      <p className="text-center text-muted-foreground py-4">
+                        No workout details available
+                      </p>
                     )}
                   </div>
                 )}

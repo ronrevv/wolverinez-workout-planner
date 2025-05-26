@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,39 +54,59 @@ const WorkoutAssignments = () => {
 
   const loadData = async () => {
     try {
+      console.log('Loading workout assignments data...');
+      
       // Load workout plans
       const { data: plansData, error: plansError } = await supabase
         .from('admin_workout_plans')
         .select('id, name, description, difficulty_level, duration_weeks')
         .order('created_at', { ascending: false });
 
-      if (plansError) throw plansError;
+      if (plansError) {
+        console.error('Error loading plans:', plansError);
+        throw plansError;
+      }
+      
+      console.log('Loaded plans:', plansData?.length || 0);
       setWorkoutPlans(plansData || []);
 
-      // Load users from profiles and subscribers, excluding admins
+      // Load all user profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('user_profiles')
         .select('user_id, name');
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        throw profilesError;
+      }
 
+      // Load all subscribers
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('user_id, email');
 
-      if (subscribersError) throw subscribersError;
+      if (subscribersError) {
+        console.error('Error loading subscribers:', subscribersError);
+        throw subscribersError;
+      }
 
-      // Get admin user IDs to exclude them
-      const { data: adminRoles, error: adminRolesError } = await supabase
+      // Load user roles to exclude admins and trainers
+      const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin');
+        .select('user_id, role');
 
-      if (adminRolesError) throw adminRolesError;
+      if (rolesError) {
+        console.error('Error loading user roles:', rolesError);
+        // Continue without filtering by roles if there's an error
+      }
 
-      const adminUserIds = new Set(adminRoles?.map(role => role.user_id) || []);
+      // Create a set of admin/trainer user IDs to exclude
+      const adminTrainerIds = new Set(
+        userRoles?.filter(role => role.role === 'admin' || role.role === 'trainer')
+          .map(role => role.user_id) || []
+      );
 
-      // Combine user data and exclude admins and current user
+      // Combine user data and exclude admins/trainers and current user
       const combinedUsers = profilesData?.map(profile => {
         const subscriber = subscribersData?.find(s => s.user_id === profile.user_id);
         return {
@@ -94,10 +115,12 @@ const WorkoutAssignments = () => {
           email: subscriber?.email || 'Unknown'
         };
       }).filter(userData => 
-        userData.user_id !== user?.id && // Exclude current admin
-        !adminUserIds.has(userData.user_id) // Exclude other admins
+        userData.user_id !== user?.id && // Exclude current user
+        !adminTrainerIds.has(userData.user_id) && // Exclude admins and trainers
+        userData.email !== 'Unknown' // Exclude users without email
       ) || [];
 
+      console.log('Available users for assignment:', combinedUsers.length);
       setUsers(combinedUsers);
 
       // Load existing assignments
@@ -106,7 +129,7 @@ const WorkoutAssignments = () => {
       console.error('Error loading data:', error);
       toast({
         title: "Error",
-        description: "Failed to load data",
+        description: "Failed to load data. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -116,6 +139,8 @@ const WorkoutAssignments = () => {
 
   const loadAssignments = async () => {
     try {
+      console.log('Loading assignments...');
+      
       const { data: assignmentsData, error } = await supabase
         .from('workout_plan_assignments')
         .select(`
@@ -128,7 +153,12 @@ const WorkoutAssignments = () => {
         `)
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading assignments:', error);
+        throw error;
+      }
+
+      console.log('Raw assignments data:', assignmentsData);
 
       // Get user details for assignments
       const { data: profilesData } = await supabase
@@ -154,6 +184,7 @@ const WorkoutAssignments = () => {
         };
       }) || [];
 
+      console.log('Enriched assignments:', enrichedAssignments.length);
       setAssignments(enrichedAssignments);
     } catch (error) {
       console.error('Error loading assignments:', error);
@@ -172,6 +203,8 @@ const WorkoutAssignments = () => {
 
     setAssigning(true);
     try {
+      console.log('Assigning workout plan:', selectedPlan, 'to users:', selectedUsers);
+      
       const assignments = selectedUsers.map(userId => ({
         workout_plan_id: selectedPlan,
         assigned_to_user: userId,
@@ -184,7 +217,10 @@ const WorkoutAssignments = () => {
         .from('workout_plan_assignments')
         .insert(assignments);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting assignments:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -202,7 +238,7 @@ const WorkoutAssignments = () => {
       console.error('Error assigning workout plan:', error);
       toast({
         title: "Error",
-        description: "Failed to assign workout plan",
+        description: "Failed to assign workout plan. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -246,20 +282,28 @@ const WorkoutAssignments = () => {
                 <SelectValue placeholder="Choose a workout plan" />
               </SelectTrigger>
               <SelectContent>
-                {workoutPlans.map((plan) => (
-                  <SelectItem key={plan.id} value={plan.id}>
-                    {plan.name} ({plan.difficulty_level} - {plan.duration_weeks} weeks)
+                {workoutPlans.length === 0 ? (
+                  <SelectItem value="no-plans" disabled>
+                    No workout plans available
                   </SelectItem>
-                ))}
+                ) : (
+                  workoutPlans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name} ({plan.difficulty_level} - {plan.duration_weeks} weeks)
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Select Users (Admins excluded)</Label>
+            <Label>Select Users</Label>
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto mt-2">
               {users.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No users available for assignment</p>
+                <p className="text-muted-foreground text-center py-4">
+                  No users available for assignment
+                </p>
               ) : (
                 users.map((userData) => (
                   <div key={userData.user_id} className="flex items-center space-x-2 py-2">
@@ -278,6 +322,11 @@ const WorkoutAssignments = () => {
                 ))
               )}
             </div>
+            {users.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                {selectedUsers.length} of {users.length} users selected
+              </p>
+            )}
           </div>
 
           <div>
@@ -308,37 +357,43 @@ const WorkoutAssignments = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Workout Plan</TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assignments.map((assignment) => (
-                <TableRow key={assignment.id}>
-                  <TableCell className="font-medium">{assignment.workout_plan_name}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{assignment.assigned_to_name}</div>
-                      <div className="text-sm text-muted-foreground">{assignment.assigned_to_email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{new Date(assignment.assigned_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge variant={assignment.status === 'active' ? 'default' : 'secondary'}>
-                      {assignment.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{assignment.notes || '-'}</TableCell>
+          {assignments.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              No assignments yet. Create your first assignment above.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Workout Plan</TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Notes</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {assignments.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell className="font-medium">{assignment.workout_plan_name}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{assignment.assigned_to_name}</div>
+                        <div className="text-sm text-muted-foreground">{assignment.assigned_to_email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{new Date(assignment.assigned_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge variant={assignment.status === 'active' ? 'default' : 'secondary'}>
+                        {assignment.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{assignment.notes || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
