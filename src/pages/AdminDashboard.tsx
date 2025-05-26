@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { UserAccessManager } from "@/components/UserAccessManager";
 import { AdminWorkoutPlanner } from "@/components/AdminWorkoutPlanner";
 import { WorkoutAssignments } from "@/components/WorkoutAssignments";
@@ -15,9 +14,8 @@ import { Shield, Users, Dumbbell, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const { toast } = useToast();
 
@@ -27,51 +25,25 @@ const AdminDashboard = () => {
       return;
     }
 
-    if (user) {
+    if (user && userRole !== null) {
       checkAdminAccess();
     }
-  }, [user, loading, navigate]);
+  }, [user, userRole, loading, navigate]);
 
   const checkAdminAccess = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user?.id)
-        .eq('role', 'admin')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking admin access:', error);
-        toast({
-          title: "Access Error",
-          description: "Unable to verify admin access",
-          variant: "destructive"
-        });
-        navigate('/');
-        return;
-      }
-
-      if (!data) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have admin privileges",
-          variant: "destructive"
-        });
-        navigate('/');
-        return;
-      }
-
-      setIsAdmin(true);
-    } catch (error) {
-      console.error('Error checking admin access:', error);
+    if (userRole !== 'admin') {
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin privileges",
+        variant: "destructive"
+      });
       navigate('/');
-    } finally {
-      setCheckingAccess(false);
+      return;
     }
+    setCheckingAccess(false);
   };
 
-  if (loading || checkingAccess) {
+  if (loading || checkingAccess || userRole === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -82,7 +54,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user || userRole !== 'admin') {
     return null;
   }
 

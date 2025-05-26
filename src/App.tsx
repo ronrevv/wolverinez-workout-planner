@@ -20,6 +20,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
+import TrainerDashboard from "./pages/TrainerDashboard";
+import MyPlans from "./pages/MyPlans";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/trainer" element={<TrainerDashboard />} />
+            <Route path="/my-plans" element={<MyPlans />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/advanced-plans" element={<AdvancedPlans />} />

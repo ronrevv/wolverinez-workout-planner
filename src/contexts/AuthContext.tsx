@@ -8,11 +8,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  userRole: string | null;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   subscription: any;
   refreshSubscription: () => Promise<void>;
+  refreshUserRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,8 +31,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const { toast } = useToast();
+
+  const refreshUserRole = async () => {
+    if (!user) {
+      setUserRole(null);
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user role:', error);
+        return;
+      }
+      
+      setUserRole(data?.role || 'user');
+    } catch (error) {
+      console.error('Error refreshing user role:', error);
+      setUserRole('user');
+    }
+  };
 
   const refreshSubscription = async () => {
     if (!user) return;
@@ -64,9 +92,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setTimeout(() => {
             refreshSubscription();
+            refreshUserRole();
           }, 0);
         } else {
           setSubscription(null);
+          setUserRole(null);
         }
       }
     );
@@ -80,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         setTimeout(() => {
           refreshSubscription();
+          refreshUserRole();
         }, 0);
       }
     });
@@ -160,11 +191,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    userRole,
     signUp,
     signIn,
     signOut,
     subscription,
     refreshSubscription,
+    refreshUserRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
