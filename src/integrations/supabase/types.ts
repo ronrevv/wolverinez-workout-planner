@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_workout_plans: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          difficulty_level: string | null
+          duration_weeks: number | null
+          exercises: Json
+          id: string
+          name: string
+          target_muscle_groups: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          difficulty_level?: string | null
+          duration_weeks?: number | null
+          exercises: Json
+          id?: string
+          name: string
+          target_muscle_groups?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          difficulty_level?: string | null
+          duration_weeks?: number | null
+          exercises?: Json
+          id?: string
+          name?: string
+          target_muscle_groups?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bmi_calculations: {
         Row: {
           bmi_category: string
@@ -116,6 +155,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_access_control: {
+        Row: {
+          access_granted_at: string | null
+          access_granted_by: string | null
+          access_revoked_at: string | null
+          created_at: string
+          google_docs_file_id: string | null
+          has_site_access: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_granted_at?: string | null
+          access_granted_by?: string | null
+          access_revoked_at?: string | null
+          created_at?: string
+          google_docs_file_id?: string | null
+          has_site_access?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_granted_at?: string | null
+          access_granted_by?: string | null
+          access_revoked_at?: string | null
+          created_at?: string
+          google_docs_file_id?: string | null
+          has_site_access?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           activity_level: string | null
@@ -155,6 +230,27 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weight?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -227,6 +323,56 @@ export type Database = {
             columns: ["workout_session_id"]
             isOneToOne: false
             referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_plan_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          assigned_to_user: string
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string
+          workout_plan_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          assigned_to_user: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          workout_plan_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          assigned_to_user?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          workout_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_plan_assignments_workout_plan_id_fkey"
+            columns: ["workout_plan_id"]
+            isOneToOne: false
+            referencedRelation: "admin_workout_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -316,6 +462,10 @@ export type Database = {
           weight_change: number
           avg_workout_duration: number
         }[]
+      }
+      user_has_site_access: {
+        Args: { user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
