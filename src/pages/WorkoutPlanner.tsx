@@ -1,12 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { MuscleGroupTabs } from "@/components/MuscleGroupTabs";
 import { WorkoutBuilder } from "@/components/WorkoutBuilder";
+import { ImprovedWorkoutPlanner } from "@/components/ImprovedWorkoutPlanner";
 import { motion } from "framer-motion";
-import { Loader2, Dumbbell } from "lucide-react";
+import { Loader2, Dumbbell, Settings } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Define types
 type Exercise = {
@@ -30,6 +32,7 @@ const WorkoutPlanner = () => {
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const [gymData, setGymData] = useState<GymData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user, userRole } = useAuth();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -121,6 +124,8 @@ const WorkoutPlanner = () => {
     }
   };
 
+  const isAdminOrTrainer = userRole === 'admin' || userRole === 'trainer';
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
       <Navbar />
@@ -163,39 +168,92 @@ const WorkoutPlanner = () => {
           </div>
         ) : (
           <motion.div 
-            className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            <motion.div 
-              className="lg:col-span-2 mb-6 lg:mb-0"
-              variants={itemVariants}
-            >
-              {gymData && (
-                <MuscleGroupTabs 
-                  muscleGroups={gymData.muscle_groups} 
-                  selectedExercises={selectedExercises}
-                  setSelectedExercises={setSelectedExercises}
-                />
-              )}
-            </motion.div>
-            
-            <motion.div 
-              className={cn(
-                "lg:sticky lg:top-20 lg:h-[calc(100vh-100px)] lg:overflow-y-auto scrollbar-hide",
-                isMobile ? "mt-6" : ""
-              )}
-              variants={itemVariants}
-            >
-              {gymData && (
-                <WorkoutBuilder 
-                  selectedExercises={selectedExercises}
-                  setSelectedExercises={setSelectedExercises}
-                  muscleGroups={gymData.muscle_groups}
-                />
-              )}
-            </motion.div>
+            {isAdminOrTrainer ? (
+              <Tabs defaultValue="builder" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="builder" className="flex items-center gap-2">
+                    <Dumbbell className="h-4 w-4" />
+                    Exercise Builder
+                  </TabsTrigger>
+                  <TabsTrigger value="planner" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Advanced Planner
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="builder" className="mt-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
+                    <motion.div 
+                      className="lg:col-span-2 mb-6 lg:mb-0"
+                      variants={itemVariants}
+                    >
+                      {gymData && (
+                        <MuscleGroupTabs 
+                          muscleGroups={gymData.muscle_groups} 
+                          selectedExercises={selectedExercises}
+                          setSelectedExercises={setSelectedExercises}
+                        />
+                      )}
+                    </motion.div>
+                    
+                    <motion.div 
+                      className={cn(
+                        "lg:sticky lg:top-20 lg:h-[calc(100vh-100px)] lg:overflow-y-auto scrollbar-hide",
+                        isMobile ? "mt-6" : ""
+                      )}
+                      variants={itemVariants}
+                    >
+                      {gymData && (
+                        <WorkoutBuilder 
+                          selectedExercises={selectedExercises}
+                          setSelectedExercises={setSelectedExercises}
+                          muscleGroups={gymData.muscle_groups}
+                        />
+                      )}
+                    </motion.div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="planner" className="mt-6">
+                  <ImprovedWorkoutPlanner />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
+                <motion.div 
+                  className="lg:col-span-2 mb-6 lg:mb-0"
+                  variants={itemVariants}
+                >
+                  {gymData && (
+                    <MuscleGroupTabs 
+                      muscleGroups={gymData.muscle_groups} 
+                      selectedExercises={selectedExercises}
+                      setSelectedExercises={setSelectedExercises}
+                    />
+                  )}
+                </motion.div>
+                
+                <motion.div 
+                  className={cn(
+                    "lg:sticky lg:top-20 lg:h-[calc(100vh-100px)] lg:overflow-y-auto scrollbar-hide",
+                    isMobile ? "mt-6" : ""
+                  )}
+                  variants={itemVariants}
+                >
+                  {gymData && (
+                    <WorkoutBuilder 
+                      selectedExercises={selectedExercises}
+                      setSelectedExercises={setSelectedExercises}
+                      muscleGroups={gymData.muscle_groups}
+                    />
+                  )}
+                </motion.div>
+              </div>
+            )}
           </motion.div>
         )}
       </main>
