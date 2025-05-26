@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Dumbbell, Clock, User, FileText } from "lucide-react";
 import { motion } from "framer-motion";
+
+interface Exercise {
+  name: string;
+  sets: string;
+  reps: string;
+  rest: string;
+  notes: string;
+}
+
+interface WorkoutDay {
+  day: number;
+  exercises: Exercise[];
+  restDay: boolean;
+}
 
 interface AssignedPlan {
   id: string;
@@ -19,7 +32,7 @@ interface AssignedPlan {
     description: string;
     difficulty_level: string;
     duration_weeks: number;
-    exercises: any[];
+    exercises: WorkoutDay[]; // Changed from any[] to WorkoutDay[]
   };
 }
 
@@ -63,7 +76,10 @@ const AssignedWorkoutPlans = () => {
         assigned_at: assignment.assigned_at,
         status: assignment.status,
         notes: assignment.notes || '',
-        plan: assignment.admin_workout_plans
+        plan: {
+          ...assignment.admin_workout_plans,
+          exercises: assignment.admin_workout_plans.exercises as WorkoutDay[] // Type assertion
+        }
       })) || [];
 
       setAssignedPlans(formattedPlans);
@@ -104,14 +120,14 @@ const AssignedWorkoutPlans = () => {
     }
   };
 
-  const renderWorkoutDay = (dayData: any, index: number) => (
+  const renderWorkoutDay = (dayData: WorkoutDay, index: number) => (
     <div key={index} className="border rounded-lg p-3 bg-secondary/30">
       <h5 className="font-semibold mb-2">Day {dayData.day}</h5>
       {dayData.restDay ? (
         <p className="text-muted-foreground">Rest Day</p>
       ) : (
         <div className="space-y-2">
-          {dayData.exercises.map((exercise: any, exerciseIndex: number) => (
+          {dayData.exercises.map((exercise: Exercise, exerciseIndex: number) => (
             <div key={exerciseIndex} className="text-sm">
               <span className="font-medium">{exercise.name}</span>
               {exercise.sets && exercise.reps && (
@@ -239,7 +255,7 @@ const AssignedWorkoutPlans = () => {
 
                 {expandedPlan === assignment.id && (
                   <div className="grid gap-3 max-h-96 overflow-y-auto">
-                    {assignment.plan?.exercises?.map((day: any, dayIndex: number) => 
+                    {assignment.plan?.exercises?.map((day: WorkoutDay, dayIndex: number) => 
                       renderWorkoutDay(day, dayIndex)
                     )}
                   </div>

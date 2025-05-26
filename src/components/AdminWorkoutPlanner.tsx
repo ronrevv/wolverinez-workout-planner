@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,7 +108,7 @@ const AdminWorkoutPlanner = () => {
           name: planName,
           description: planDescription,
           created_by: user?.id,
-          exercises: workoutDays,
+          exercises: workoutDays as any, // Cast to Json type
           duration_weeks: durationWeeks,
           difficulty_level: difficultyLevel,
           target_muscle_groups: targetMuscleGroups

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { UserCheck, UserX, FileText, Shield, AlertCircle } from "lucide-react";
+import { UserCheck, UserX, FileText, Shield, AlertCircle, Users } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface UserAccess {

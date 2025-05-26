@@ -84,7 +84,7 @@ const WorkoutAssignments = () => {
           name: profile.name || 'Unknown',
           email: subscriber?.email || 'Unknown'
         };
-      }).filter(user => user.user_id !== user?.id) || []; // Exclude current admin
+      }).filter(userData => userData.user_id !== user?.id) || []; // Exclude current admin
 
       setUsers(combinedUsers);
 
@@ -246,18 +246,18 @@ const WorkoutAssignments = () => {
           <div>
             <Label>Select Users</Label>
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto mt-2">
-              {users.map((user) => (
-                <div key={user.user_id} className="flex items-center space-x-2 py-2">
+              {users.map((userData) => (
+                <div key={userData.user_id} className="flex items-center space-x-2 py-2">
                   <input
                     type="checkbox"
-                    id={user.user_id}
-                    checked={selectedUsers.includes(user.user_id)}
-                    onChange={() => toggleUserSelection(user.user_id)}
+                    id={userData.user_id}
+                    checked={selectedUsers.includes(userData.user_id)}
+                    onChange={() => toggleUserSelection(userData.user_id)}
                     className="rounded"
                   />
-                  <label htmlFor={user.user_id} className="flex-1 cursor-pointer">
-                    <div className="font-medium">{user.name}</div>
-                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                  <label htmlFor={userData.user_id} className="flex-1 cursor-pointer">
+                    <div className="font-medium">{userData.name}</div>
+                    <div className="text-sm text-muted-foreground">{userData.email}</div>
                   </label>
                 </div>
               ))}
