@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +12,7 @@ interface UserPlan {
   id: string;
   name: string;
   description: string | null;
-  exercises: unknown;
+  exercises: any;
   level: number | null;
   fitness_goal: string | null;
   duration_weeks: number | null;
@@ -37,7 +36,7 @@ const UserWorkoutPlans = () => {
     try {
       const { data, error } = await supabase
         .from('workout_plans')
-        .select('*')
+        .select('id, name, description, exercises, level, fitness_goal, duration_weeks, created_at, user_id')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
