@@ -473,6 +473,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      get_user_role_bypass_rls: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       get_user_role_safe: {
         Args: { user_uuid: string }
         Returns: string
@@ -487,6 +491,10 @@ export type Database = {
         }[]
       }
       is_admin: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
+      is_admin_bypass_rls: {
         Args: { user_uuid?: string }
         Returns: boolean
       }

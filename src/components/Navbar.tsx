@@ -1,12 +1,20 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Dumbbell, Menu, X, User, Shield, Award, Calculator, FileText, Target, Database } from 'lucide-react';
+import { Dumbbell, Menu, X, User, Shield, Award, Calculator, FileText, Target, Database, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 
 export const Navbar = () => {
   const { user, userRole } = useAuth();
@@ -36,47 +44,71 @@ export const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const publicNavItems = [
-    { to: '/', label: 'Home', icon: Dumbbell },
-    { to: '/about', label: 'About', icon: FileText },
-    { to: '/bmi-calculator', label: 'BMI Calculator', icon: Calculator },
-    { to: '/workout-plans', label: 'Workout Plans', icon: Target },
+  const publicNavGroups = [
+    {
+      title: "Home",
+      items: [{ to: '/', label: 'Home', icon: Dumbbell }]
+    },
+    {
+      title: "Fitness Tools",
+      items: [
+        { to: '/bmi-calculator', label: 'BMI Calculator', icon: Calculator },
+        { to: '/workout-plans', label: 'Workout Plans', icon: Target },
+      ]
+    },
+    {
+      title: "About",
+      items: [{ to: '/about', label: 'About', icon: FileText }]
+    }
   ];
 
-  const userNavItems = [
-    { to: '/profile', label: 'Profile', icon: User },
-    { to: '/my-plans', label: 'My Plans', icon: Target },
-    { to: '/workout-planner', label: 'Planner', icon: Dumbbell },
+  const userNavGroups = [
+    {
+      title: "My Fitness",
+      items: [
+        { to: '/profile', label: 'Profile', icon: User },
+        { to: '/my-plans', label: 'My Plans', icon: Target },
+        { to: '/workout-planner', label: 'Planner', icon: Dumbbell },
+      ]
+    }
   ];
 
-  const adminNavItems = [
-    { to: '/admin', label: 'Admin', icon: Shield },
-    { to: '/demo-setup', label: 'Demo Setup', icon: Database },
+  const adminNavGroups = [
+    {
+      title: "Admin",
+      items: [
+        { to: '/admin', label: 'Admin Dashboard', icon: Shield },
+        { to: '/demo-setup', label: 'Demo Setup', icon: Database },
+      ]
+    }
   ];
 
-  const trainerNavItems = [
-    { to: '/trainer', label: 'Trainer', icon: Award },
+  const trainerNavGroups = [
+    {
+      title: "Trainer",
+      items: [{ to: '/trainer', label: 'Trainer Dashboard', icon: Award }]
+    }
   ];
 
-  const getAllNavItems = () => {
-    let items = [...publicNavItems];
+  const getAllNavGroups = () => {
+    let groups = [...publicNavGroups];
     
     if (user) {
-      items = [...items, ...userNavItems];
+      groups = [...groups, ...userNavGroups];
       
       if (userRole === 'admin') {
-        items = [...items, ...adminNavItems];
+        groups = [...groups, ...adminNavGroups];
       }
       
       if (userRole === 'trainer' || userRole === 'admin') {
-        items = [...items, ...trainerNavItems];
+        groups = [...groups, ...trainerNavGroups];
       }
     }
     
-    return items;
+    return groups;
   };
 
-  const navItems = getAllNavItems();
+  const navGroups = getAllNavGroups();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -89,24 +121,66 @@ export const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.to)
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+          <div className="hidden md:flex items-center">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {navGroups.map((group) => {
+                  // If group has only one item, render as direct link
+                  if (group.items.length === 1) {
+                    const item = group.items[0];
+                    const Icon = item.icon;
+                    return (
+                      <NavigationMenuItem key={group.title}>
+                        <NavigationMenuLink asChild>
+                          <Link
+                            to={item.to}
+                            className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                              isActive(item.to)
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                            <span>{group.title}</span>
+                          </Link>
+                        </NavigationMenuLink>
+                      </NavigationMenuItem>
+                    );
+                  }
+
+                  // If group has multiple items, render as dropdown
+                  return (
+                    <NavigationMenuItem key={group.title}>
+                      <NavigationMenuTrigger className="text-sm font-medium">
+                        {group.title}
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <div className="grid gap-1 p-2 w-48">
+                          {group.items.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <NavigationMenuLink key={item.to} asChild>
+                                <Link
+                                  to={item.to}
+                                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                                    isActive(item.to)
+                                      ? 'bg-primary/10 text-primary'
+                                      : 'hover:bg-primary/5'
+                                  }`}
+                                >
+                                  <Icon className="h-4 w-4" />
+                                  <span>{item.label}</span>
+                                </Link>
+                              </NavigationMenuLink>
+                            );
+                          })}
+                        </div>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  );
+                })}
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
 
           {/* Desktop Auth Buttons */}
@@ -155,24 +229,31 @@ export const Navbar = () => {
         {isOpen && (
           <div className="md:hidden border-t bg-background">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setIsOpen(false)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                      isActive(item.to)
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+              {navGroups.map((group) => (
+                <div key={group.title} className="space-y-1">
+                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {group.title}
+                  </div>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setIsOpen(false)}
+                        className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          isActive(item.to)
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
               
               <div className="border-t pt-4 mt-4">
                 {user ? (
