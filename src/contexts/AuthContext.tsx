@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     try {
+      console.log('Fetching user role for:', user.id);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -50,10 +50,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user role:', error);
+        setUserRole('user'); // Default to 'user' if there's an error
         return;
       }
       
-      setUserRole(data?.role || 'user');
+      const role = data?.role || 'user';
+      console.log('User role fetched:', role);
+      setUserRole(role);
     } catch (error) {
       console.error('Error refreshing user role:', error);
       setUserRole('user');
@@ -88,18 +91,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Auth state changed:', event, !!session);
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         
         if (session?.user) {
           // Use setTimeout to avoid blocking the auth callback
           setTimeout(() => {
             refreshSubscription();
             refreshUserRole();
-          }, 0);
+          }, 100);
         } else {
           setSubscription(null);
           setUserRole(null);
         }
+        setLoading(false);
       }
     );
 
@@ -108,14 +111,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Initial session check:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
       
       if (session?.user) {
         setTimeout(() => {
           refreshSubscription();
           refreshUserRole();
-        }, 0);
+        }, 100);
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

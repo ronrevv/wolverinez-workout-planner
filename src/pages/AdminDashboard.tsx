@@ -20,35 +20,42 @@ const AdminDashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-      return;
-    }
+    console.log('AdminDashboard - Auth state:', { user: !!user, userRole, loading });
+    
+    if (!loading) {
+      if (!user) {
+        console.log('No user, redirecting to auth');
+        navigate('/auth');
+        return;
+      }
 
-    if (user && userRole !== null) {
-      checkAdminAccess();
+      if (userRole !== null) {
+        console.log('Checking admin access for role:', userRole);
+        if (userRole !== 'admin') {
+          toast({
+            title: "Access Denied",
+            description: "You don't have admin privileges",
+            variant: "destructive"
+          });
+          navigate('/');
+          return;
+        }
+        setCheckingAccess(false);
+      }
     }
-  }, [user, userRole, loading, navigate]);
+  }, [user, userRole, loading, navigate, toast]);
 
-  const checkAdminAccess = async () => {
-    if (userRole !== 'admin') {
-      toast({
-        title: "Access Denied",
-        description: "You don't have admin privileges",
-        variant: "destructive"
-      });
-      navigate('/');
-      return;
-    }
-    setCheckingAccess(false);
-  };
-
-  if (loading || checkingAccess || userRole === null) {
+  if (loading || checkingAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Shield className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Checking admin access...</p>
+          <p className="text-muted-foreground">
+            {loading ? 'Loading...' : 'Checking admin access...'}
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            User: {user ? 'Authenticated' : 'Not authenticated'} | Role: {userRole || 'Loading...'}
+          </p>
         </div>
       </div>
     );

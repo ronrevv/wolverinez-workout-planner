@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, X, Dumbbell, Calculator, Target, Shield, Award, User, ChevronDown } from "lucide-react";
+import { Menu, X, Dumbbell, Calculator, Target, Shield, Award, User, ChevronDown, Info, CreditCard, Heart, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,8 +26,10 @@ export function Navbar() {
     { name: "Workout Planner", path: "/workout-planner", icon: Dumbbell },
     { name: "BMI Calculator", path: "/bmi-calculator", icon: Calculator },
     { name: "Workout Plans", path: "/workout-plans", icon: Target },
-    { name: "About", path: "/about", icon: null },
-    { name: "Membership", path: "/membership", icon: null },
+    { name: "Advanced Plans", path: "/advanced-plans", icon: Award },
+    { name: "Diet Request", path: "/diet-request", icon: Heart },
+    { name: "About", path: "/about", icon: Info },
+    { name: "Membership", path: "/membership", icon: CreditCard },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -108,7 +110,7 @@ export function Navbar() {
 
                 <Link to="/my-plans">
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Dumbbell className="h-4 w-4" />
+                    <BookOpen className="h-4 w-4" />
                     My Plans
                   </Button>
                 </Link>
@@ -228,7 +230,7 @@ export function Navbar() {
 
                   <Link to="/my-plans" onClick={() => setIsOpen(false)}>
                     <Button variant="ghost" size="sm" className="w-full justify-start">
-                      <Dumbbell className="h-4 w-4 mr-2" />
+                      <BookOpen className="h-4 w-4 mr-2" />
                       My Plans
                     </Button>
                   </Link>
