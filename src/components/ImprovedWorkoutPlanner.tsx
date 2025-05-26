@@ -205,25 +205,52 @@ const ImprovedWorkoutPlanner = () => {
           .map(day => day.targetMuscleGroup)
       });
 
-      // Use the service role client to bypass RLS issues
-      const { data, error } = await supabase.rpc('create_workout_plan_as_admin', {
-        plan_name: planName,
-        plan_description: planDescription || '',
-        user_uuid: user.id,
-        plan_exercises: workoutDays,
-        plan_duration_weeks: durationWeeks,
-        plan_difficulty_level: difficultyLevel,
-        plan_target_muscle_groups: workoutDays
-          .filter(day => !day.restDay && day.targetMuscleGroup)
-          .map(day => day.targetMuscleGroup)
-      });
+      // Try to use the database function first
+      try {
+        const { data, error } = await supabase.rpc('create_workout_plan_as_admin' as any, {
+          plan_name: planName,
+          plan_description: planDescription || '',
+          user_uuid: user.id,
+          plan_exercises: workoutDays,
+          plan_duration_weeks: durationWeeks,
+          plan_difficulty_level: difficultyLevel,
+          plan_target_muscle_groups: workoutDays
+            .filter(day => !day.restDay && day.targetMuscleGroup)
+            .map(day => day.targetMuscleGroup)
+        });
 
-      if (error) {
-        console.error('Error saving workout plan:', error);
-        throw error;
+        if (error) {
+          console.error('Error with RPC function:', error);
+          throw error;
+        }
+
+        console.log('Workout plan saved successfully via RPC:', data);
+      } catch (rpcError) {
+        console.log('RPC failed, trying direct insert:', rpcError);
+        
+        // Fallback to direct insert
+        const { data, error } = await supabase
+          .from('admin_workout_plans')
+          .insert({
+            name: planName,
+            description: planDescription || '',
+            created_by: user.id,
+            exercises: workoutDays as any,
+            duration_weeks: durationWeeks,
+            difficulty_level: difficultyLevel,
+            target_muscle_groups: workoutDays
+              .filter(day => !day.restDay && day.targetMuscleGroup)
+              .map(day => day.targetMuscleGroup)
+          })
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        console.log('Workout plan saved successfully via direct insert:', data);
       }
-
-      console.log('Workout plan saved successfully:', data);
 
       toast({
         title: "Success",
@@ -241,55 +268,11 @@ const ImprovedWorkoutPlanner = () => {
       setAvailableExercises([]);
     } catch (error: any) {
       console.error('Error saving workout plan:', error);
-      
-      // Fallback: try direct insert if the RPC function doesn't exist
-      try {
-        console.log('Attempting fallback insert...');
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('admin_workout_plans')
-          .insert({
-            name: planName,
-            description: planDescription || '',
-            created_by: user.id,
-            exercises: workoutDays as any,
-            duration_weeks: durationWeeks,
-            difficulty_level: difficultyLevel,
-            target_muscle_groups: workoutDays
-              .filter(day => !day.restDay && day.targetMuscleGroup)
-              .map(day => day.targetMuscleGroup)
-          })
-          .select()
-          .single();
-
-        if (fallbackError) {
-          throw fallbackError;
-        }
-
-        console.log('Fallback insert successful:', fallbackData);
-        
-        toast({
-          title: "Success",
-          description: "Workout plan created successfully!",
-        });
-
-        // Reset form
-        setPlanName('');
-        setPlanDescription('');
-        setDifficultyLevel('beginner');
-        setDurationWeeks(4);
-        setWorkoutDays([
-          { day: 1, name: 'Day 1', targetMuscleGroup: '', exercises: [], restDay: false }
-        ]);
-        setAvailableExercises([]);
-        
-      } catch (fallbackError: any) {
-        console.error('Fallback insert also failed:', fallbackError);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to save workout plan",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save workout plan",
+        variant: "destructive"
+      });
     } finally {
       setSaving(false);
     }

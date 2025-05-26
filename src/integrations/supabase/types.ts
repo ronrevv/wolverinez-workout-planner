@@ -457,6 +457,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_workout_plan_as_admin: {
+        Args: {
+          plan_name: string
+          plan_description: string
+          user_uuid: string
+          plan_exercises: Json
+          plan_duration_weeks: number
+          plan_difficulty_level: string
+          plan_target_muscle_groups: string[]
+        }
+        Returns: string
+      }
       debug_user_role: {
         Args: { user_email: string }
         Returns: {
@@ -500,6 +512,10 @@ export type Database = {
       }
       is_admin_or_trainer: {
         Args: { user_uuid?: string }
+        Returns: boolean
+      }
+      is_admin_or_trainer_bypass_rls: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       user_has_site_access: {
