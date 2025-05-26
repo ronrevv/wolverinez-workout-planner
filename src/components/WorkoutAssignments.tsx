@@ -76,6 +76,8 @@ const WorkoutAssignments = () => {
 
   const loadWorkoutPlans = async () => {
     try {
+      console.log('Loading workout plans with new RLS policies...');
+      
       const { data: plansData, error: plansError } = await supabase
         .from('admin_workout_plans')
         .select('id, name, description, difficulty_level, duration_weeks')
@@ -86,7 +88,7 @@ const WorkoutAssignments = () => {
         throw plansError;
       }
       
-      console.log('Loaded plans:', plansData?.length || 0);
+      console.log('Successfully loaded plans:', plansData?.length || 0);
       setWorkoutPlans(plansData || []);
     } catch (error) {
       console.error('Failed to load workout plans:', error);
@@ -96,6 +98,8 @@ const WorkoutAssignments = () => {
 
   const loadUsers = async () => {
     try {
+      console.log('Loading users for assignment...');
+      
       // Get all subscribers first (these are the users)
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
@@ -108,9 +112,13 @@ const WorkoutAssignments = () => {
       }
 
       // Get user profiles for names
-      const { data: profilesData } = await supabase
+      const { data: profilesData, error: profilesError } = await supabase
         .from('user_profiles')
         .select('user_id, name');
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+      }
 
       // Combine user data and exclude current user
       const combinedUsers = subscribersData?.map(subscriber => {
@@ -134,7 +142,7 @@ const WorkoutAssignments = () => {
 
   const loadAssignments = async () => {
     try {
-      console.log('Loading assignments...');
+      console.log('Loading assignments with new RLS policies...');
       
       const { data: assignmentsData, error } = await supabase
         .from('workout_plan_assignments')
@@ -143,8 +151,8 @@ const WorkoutAssignments = () => {
           assigned_at,
           status,
           notes,
-          admin_workout_plans(name),
-          assigned_to_user
+          assigned_to_user,
+          workout_plan_id
         `)
         .order('assigned_at', { ascending: false });
 
@@ -153,31 +161,48 @@ const WorkoutAssignments = () => {
         throw error;
       }
 
-      console.log('Raw assignments data:', assignmentsData);
+      console.log('Raw assignments data:', assignmentsData?.length || 0);
+
+      if (!assignmentsData || assignmentsData.length === 0) {
+        console.log('No assignments found');
+        setAssignments([]);
+        return;
+      }
+
+      // Get workout plan names separately
+      const planIds = [...new Set(assignmentsData.map(a => a.workout_plan_id))];
+      const { data: plansData } = await supabase
+        .from('admin_workout_plans')
+        .select('id, name')
+        .in('id', planIds);
 
       // Get user details for assignments
+      const userIds = [...new Set(assignmentsData.map(a => a.assigned_to_user))];
       const { data: profilesData } = await supabase
         .from('user_profiles')
-        .select('user_id, name');
+        .select('user_id, name')
+        .in('user_id', userIds);
 
       const { data: subscribersData } = await supabase
         .from('subscribers')
-        .select('user_id, email');
+        .select('user_id, email')
+        .in('user_id', userIds);
 
-      const enrichedAssignments = assignmentsData?.map(assignment => {
+      const enrichedAssignments = assignmentsData.map(assignment => {
+        const plan = plansData?.find(p => p.id === assignment.workout_plan_id);
         const profile = profilesData?.find(p => p.user_id === assignment.assigned_to_user);
         const subscriber = subscribersData?.find(s => s.user_id === assignment.assigned_to_user);
         
         return {
           id: assignment.id,
-          workout_plan_name: assignment.admin_workout_plans?.name || 'Unknown Plan',
+          workout_plan_name: plan?.name || 'Unknown Plan',
           assigned_to_name: profile?.name || 'Unknown',
           assigned_to_email: subscriber?.email || 'Unknown',
           assigned_at: assignment.assigned_at,
           status: assignment.status,
           notes: assignment.notes || ''
         };
-      }) || [];
+      });
 
       console.log('Enriched assignments:', enrichedAssignments.length);
       setAssignments(enrichedAssignments);
