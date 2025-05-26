@@ -490,6 +490,10 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: boolean
       }
+      is_admin_or_trainer: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
       user_has_site_access: {
         Args: { user_id: string }
         Returns: boolean

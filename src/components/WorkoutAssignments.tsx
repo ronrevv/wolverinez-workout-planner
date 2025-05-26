@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, Users, Dumbbell, Send } from "lucide-react";
+import { Calendar, Users, Dumbbell, Send, CheckCircle, AlertCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
@@ -53,10 +53,29 @@ const WorkoutAssignments = () => {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       console.log('Loading workout assignments data...');
       
-      // Load workout plans
+      await Promise.all([
+        loadWorkoutPlans(),
+        loadUsers(),
+        loadAssignments()
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadWorkoutPlans = async () => {
+    try {
       const { data: plansData, error: plansError } = await supabase
         .from('admin_workout_plans')
         .select('id, name, description, difficulty_level, duration_weeks')
@@ -69,26 +88,29 @@ const WorkoutAssignments = () => {
       
       console.log('Loaded plans:', plansData?.length || 0);
       setWorkoutPlans(plansData || []);
+    } catch (error) {
+      console.error('Failed to load workout plans:', error);
+      setWorkoutPlans([]);
+    }
+  };
 
-      // Load users from subscribers table (these are the actual users)
+  const loadUsers = async () => {
+    try {
+      // Get all subscribers first (these are the users)
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
-        .select('user_id, email');
+        .select('user_id, email')
+        .not('user_id', 'is', null);
 
       if (subscribersError) {
         console.error('Error loading subscribers:', subscribersError);
         throw subscribersError;
       }
 
-      // Load user profiles for names
-      const { data: profilesData, error: profilesError } = await supabase
+      // Get user profiles for names
+      const { data: profilesData } = await supabase
         .from('user_profiles')
         .select('user_id, name');
-
-      if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
-        // Continue without names if profiles fail
-      }
 
       // Combine user data and exclude current user
       const combinedUsers = subscribersData?.map(subscriber => {
@@ -99,24 +121,14 @@ const WorkoutAssignments = () => {
           email: subscriber.email
         };
       }).filter(userData => 
-        userData.user_id !== user?.id && // Exclude current user
-        userData.email !== 'Unknown' // Exclude users without email
+        userData.user_id !== user?.id // Exclude current user
       ) || [];
 
       console.log('Available users for assignment:', combinedUsers.length);
       setUsers(combinedUsers);
-
-      // Load existing assignments
-      await loadAssignments();
     } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load data. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+      console.error('Failed to load users:', error);
+      setUsers([]);
     }
   };
 
@@ -171,6 +183,7 @@ const WorkoutAssignments = () => {
       setAssignments(enrichedAssignments);
     } catch (error) {
       console.error('Error loading assignments:', error);
+      setAssignments([]);
     }
   };
 
@@ -279,7 +292,7 @@ const WorkoutAssignments = () => {
               <SelectContent>
                 {workoutPlans.length === 0 ? (
                   <SelectItem value="no-plans" disabled>
-                    No workout plans available
+                    No workout plans available - Create one first
                   </SelectItem>
                 ) : (
                   workoutPlans.map((plan) => (
@@ -290,15 +303,25 @@ const WorkoutAssignments = () => {
                 )}
               </SelectContent>
             </Select>
+            {workoutPlans.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                <AlertCircle className="h-3 w-3 inline mr-1" />
+                Create workout plans in the "Create Plans" tab first
+              </p>
+            )}
           </div>
 
           <div>
             <Label>Select Users ({users.length} available)</Label>
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto mt-2">
               {users.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  No users available for assignment
-                </p>
+                <div className="text-center py-4">
+                  <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">No users available for assignment</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Users will appear here once they sign up
+                  </p>
+                </div>
               ) : (
                 users.map((userData) => (
                   <div key={userData.user_id} className="flex items-center space-x-2 py-2">
@@ -313,6 +336,9 @@ const WorkoutAssignments = () => {
                       <div className="font-medium">{userData.name}</div>
                       <div className="text-sm text-muted-foreground">{userData.email}</div>
                     </label>
+                    {selectedUsers.includes(userData.user_id) && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
                   </div>
                 ))
               )}
@@ -336,10 +362,17 @@ const WorkoutAssignments = () => {
 
           <Button 
             onClick={assignWorkoutPlan} 
-            disabled={assigning || !selectedPlan || selectedUsers.length === 0}
+            disabled={assigning || !selectedPlan || selectedUsers.length === 0 || workoutPlans.length === 0}
             className="w-full"
           >
-            {assigning ? "Assigning..." : `Assign to ${selectedUsers.length} user(s)`}
+            {assigning ? (
+              <span className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-b-transparent" />
+                Assigning...
+              </span>
+            ) : (
+              `Assign to ${selectedUsers.length} user(s)`
+            )}
           </Button>
         </CardContent>
       </Card>
@@ -353,41 +386,53 @@ const WorkoutAssignments = () => {
         </CardHeader>
         <CardContent>
           {assignments.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No assignments yet. Create your first assignment above.
-            </p>
+            <div className="text-center py-8">
+              <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No assignments yet.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Create your first assignment above.
+              </p>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Workout Plan</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Notes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignments.map((assignment) => (
-                  <TableRow key={assignment.id}>
-                    <TableCell className="font-medium">{assignment.workout_plan_name}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{assignment.assigned_to_name}</div>
-                        <div className="text-sm text-muted-foreground">{assignment.assigned_to_email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{new Date(assignment.assigned_at).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge variant={assignment.status === 'active' ? 'default' : 'secondary'}>
-                        {assignment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">{assignment.notes || '-'}</TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Workout Plan</TableHead>
+                    <TableHead>Assigned To</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Notes</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {assignments.map((assignment) => (
+                    <TableRow key={assignment.id}>
+                      <TableCell className="font-medium min-w-[150px]">
+                        {assignment.workout_plan_name}
+                      </TableCell>
+                      <TableCell className="min-w-[200px]">
+                        <div>
+                          <div className="font-medium">{assignment.assigned_to_name}</div>
+                          <div className="text-sm text-muted-foreground">{assignment.assigned_to_email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{new Date(assignment.assigned_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={assignment.status === 'active' ? 'default' : 'secondary'}>
+                          {assignment.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="truncate" title={assignment.notes || '-'}>
+                          {assignment.notes || '-'}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

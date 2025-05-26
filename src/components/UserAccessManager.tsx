@@ -38,7 +38,8 @@ const UserAccessManager = () => {
       // Get all subscribers first (these are the users)
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
-        .select('user_id, email');
+        .select('user_id, email')
+        .not('user_id', 'is', null);
 
       if (subscribersError) {
         console.error('Error loading subscribers:', subscribersError);
@@ -47,33 +48,30 @@ const UserAccessManager = () => {
 
       console.log('Subscribers loaded:', subscribersData?.length || 0);
 
+      if (!subscribersData || subscribersData.length === 0) {
+        console.log('No subscribers found');
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+
       // Get user profiles for names
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data: profilesData } = await supabase
         .from('user_profiles')
         .select('user_id, name');
 
-      if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
-        // Continue without profiles if there's an error
-      }
-
       // Get existing access control records
-      const { data: accessData, error: accessError } = await supabase
+      const { data: accessData } = await supabase
         .from('user_access_control')
         .select('*');
 
-      if (accessError) {
-        console.error('Error loading access control:', accessError);
-        // Continue without access control if there's an error
-      }
-
       // Combine the data
-      const combinedUsers = subscribersData?.map(subscriber => {
+      const combinedUsers = subscribersData.map(subscriber => {
         const profile = profilesData?.find(p => p.user_id === subscriber.user_id);
         const accessControl = accessData?.find(a => a.user_id === subscriber.user_id);
         
         return {
-          id: accessControl?.id || '',
+          id: accessControl?.id || crypto.randomUUID(),
           user_id: subscriber.user_id,
           user_email: subscriber.email,
           user_name: profile?.name || 'Unknown User',
@@ -82,7 +80,7 @@ const UserAccessManager = () => {
           access_granted_at: accessControl?.access_granted_at || new Date().toISOString(),
           access_revoked_at: accessControl?.access_revoked_at || null
         };
-      }) || [];
+      });
 
       console.log('Combined users:', combinedUsers);
       setUsers(combinedUsers);
@@ -214,69 +212,74 @@ const UserAccessManager = () => {
             <div className="text-center py-8">
               <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No users found in the system.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Users will appear here once they sign up for the service.
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Access Status</TableHead>
-                  <TableHead>Google Docs</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.user_id}>
-                    <TableCell className="font-medium">{user.user_name}</TableCell>
-                    <TableCell>{user.user_email}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.has_site_access ? "default" : "destructive"}>
-                        {user.has_site_access ? (
-                          <UserCheck className="h-3 w-3 mr-1" />
-                        ) : (
-                          <UserX className="h-3 w-3 mr-1" />
-                        )}
-                        {user.has_site_access ? 'Active' : 'Revoked'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.google_docs_file_id ? (
-                        <Badge variant="outline">
-                          <FileText className="h-3 w-3 mr-1" />
-                          Linked
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                          No File
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant={user.has_site_access ? "destructive" : "default"}
-                          onClick={() => toggleUserAccess(user.user_id, user.has_site_access)}
-                        >
-                          {user.has_site_access ? 'Revoke' : 'Grant'} Access
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateGoogleDocsFile(user.user_id)}
-                          disabled={!googleDocsFileId.trim()}
-                        >
-                          Link Docs
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Access Status</TableHead>
+                    <TableHead>Google Docs</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.user_id}>
+                      <TableCell className="font-medium">{user.user_name}</TableCell>
+                      <TableCell className="min-w-[200px]">{user.user_email}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.has_site_access ? "default" : "destructive"}>
+                          {user.has_site_access ? (
+                            <UserCheck className="h-3 w-3 mr-1" />
+                          ) : (
+                            <UserX className="h-3 w-3 mr-1" />
+                          )}
+                          {user.has_site_access ? 'Active' : 'Revoked'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.google_docs_file_id ? (
+                          <Badge variant="outline">
+                            <FileText className="h-3 w-3 mr-1" />
+                            Linked
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            No File
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            size="sm"
+                            variant={user.has_site_access ? "destructive" : "default"}
+                            onClick={() => toggleUserAccess(user.user_id, user.has_site_access)}
+                          >
+                            {user.has_site_access ? 'Revoke' : 'Grant'} Access
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateGoogleDocsFile(user.user_id)}
+                            disabled={!googleDocsFileId.trim()}
+                          >
+                            Link Docs
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
