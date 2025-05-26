@@ -12,12 +12,13 @@ import { motion } from "framer-motion";
 interface UserPlan {
   id: string;
   name: string;
-  description: string;
-  exercises: any;
-  level: number;
-  fitness_goal: string;
-  duration_weeks: number;
+  description: string | null;
+  exercises: unknown;
+  level: number | null;
+  fitness_goal: string | null;
+  duration_weeks: number | null;
   created_at: string;
+  user_id: string;
 }
 
 const UserWorkoutPlans = () => {
@@ -61,7 +62,7 @@ const UserWorkoutPlans = () => {
         .from('workout_plans')
         .delete()
         .eq('id', planId)
-        .eq('user_id', user?.id); // Ensure user can only delete their own plans
+        .eq('user_id', user?.id);
 
       if (error) throw error;
 
@@ -139,7 +140,7 @@ const UserWorkoutPlans = () => {
                     {plan.name}
                   </CardTitle>
                   <p className="text-muted-foreground mt-1">
-                    {plan.description}
+                    {plan.description || 'No description provided'}
                   </p>
                 </div>
                 <Button
@@ -156,16 +157,16 @@ const UserWorkoutPlans = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div>
                   <span className="text-sm text-muted-foreground">Duration</span>
-                  <p className="font-medium">{plan.duration_weeks} weeks</p>
+                  <p className="font-medium">{plan.duration_weeks || 'N/A'} weeks</p>
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Level</span>
-                  <p className="font-medium">Level {plan.level}</p>
+                  <p className="font-medium">Level {plan.level || 'N/A'}</p>
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Goal</span>
                   <Badge variant="outline" className="capitalize">
-                    {plan.fitness_goal?.replace('_', ' ')}
+                    {plan.fitness_goal?.replace('_', ' ') || 'General Fitness'}
                   </Badge>
                 </div>
                 <div>
