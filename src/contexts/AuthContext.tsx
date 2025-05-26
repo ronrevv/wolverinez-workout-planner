@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,19 +48,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Clear any existing role first
       setUserRole(null);
       
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', targetUserId)
-        .single();
+      // Use the security definer function instead of direct table query
+      const { data, error } = await supabase.rpc('get_user_role_safe', {
+        user_uuid: targetUserId
+      });
       
       if (error) {
-        console.log('No role found, defaulting to user:', error.message);
+        console.log('Error fetching role, defaulting to user:', error.message);
         setUserRole('user');
         return;
       }
       
-      const role = data?.role || 'user';
+      const role = data || 'user';
       console.log('User role fetched successfully:', role);
       setUserRole(role);
     } catch (error) {

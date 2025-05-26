@@ -473,6 +473,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      get_user_role_safe: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       get_user_workout_stats: {
         Args: { p_user_id: string; p_start_date: string; p_end_date: string }
         Returns: {
