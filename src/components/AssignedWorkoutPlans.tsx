@@ -32,7 +32,7 @@ interface AssignedPlan {
     description: string;
     difficulty_level: string;
     duration_weeks: number;
-    exercises: WorkoutDay[]; // Changed from any[] to WorkoutDay[]
+    exercises: WorkoutDay[];
   };
 }
 
@@ -48,6 +48,28 @@ const AssignedWorkoutPlans = () => {
       loadAssignedPlans();
     }
   }, [user]);
+
+  const parseExercises = (exercisesData: any): WorkoutDay[] => {
+    try {
+      // If exercisesData is already an array, return it
+      if (Array.isArray(exercisesData)) {
+        return exercisesData as WorkoutDay[];
+      }
+      // If it's a string, try to parse it
+      if (typeof exercisesData === 'string') {
+        return JSON.parse(exercisesData) as WorkoutDay[];
+      }
+      // If it's an object, return it as an array
+      if (exercisesData && typeof exercisesData === 'object') {
+        return exercisesData as WorkoutDay[];
+      }
+      // Default fallback
+      return [];
+    } catch (error) {
+      console.error('Error parsing exercises data:', error);
+      return [];
+    }
+  };
 
   const loadAssignedPlans = async () => {
     try {
@@ -78,7 +100,7 @@ const AssignedWorkoutPlans = () => {
         notes: assignment.notes || '',
         plan: {
           ...assignment.admin_workout_plans,
-          exercises: assignment.admin_workout_plans.exercises as WorkoutDay[] // Type assertion
+          exercises: parseExercises(assignment.admin_workout_plans.exercises)
         }
       })) || [];
 
