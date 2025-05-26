@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,7 @@ const WorkoutAssignments = () => {
       if (plansError) throw plansError;
       setWorkoutPlans(plansData || []);
 
-      // Load users from profiles and subscribers
+      // Load users from profiles and subscribers, excluding admins
       const { data: profilesData, error: profilesError } = await supabase
         .from('user_profiles')
         .select('user_id, name');
@@ -76,7 +75,17 @@ const WorkoutAssignments = () => {
 
       if (subscribersError) throw subscribersError;
 
-      // Combine user data
+      // Get admin user IDs to exclude them
+      const { data: adminRoles, error: adminRolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (adminRolesError) throw adminRolesError;
+
+      const adminUserIds = new Set(adminRoles?.map(role => role.user_id) || []);
+
+      // Combine user data and exclude admins and current user
       const combinedUsers = profilesData?.map(profile => {
         const subscriber = subscribersData?.find(s => s.user_id === profile.user_id);
         return {
@@ -84,7 +93,10 @@ const WorkoutAssignments = () => {
           name: profile.name || 'Unknown',
           email: subscriber?.email || 'Unknown'
         };
-      }).filter(userData => userData.user_id !== user?.id) || []; // Exclude current admin
+      }).filter(userData => 
+        userData.user_id !== user?.id && // Exclude current admin
+        !adminUserIds.has(userData.user_id) // Exclude other admins
+      ) || [];
 
       setUsers(combinedUsers);
 
@@ -223,7 +235,7 @@ const WorkoutAssignments = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
-            Assign Workout Plans
+            Assign Workout Plans to Users
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -244,23 +256,27 @@ const WorkoutAssignments = () => {
           </div>
 
           <div>
-            <Label>Select Users</Label>
+            <Label>Select Users (Admins excluded)</Label>
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto mt-2">
-              {users.map((userData) => (
-                <div key={userData.user_id} className="flex items-center space-x-2 py-2">
-                  <input
-                    type="checkbox"
-                    id={userData.user_id}
-                    checked={selectedUsers.includes(userData.user_id)}
-                    onChange={() => toggleUserSelection(userData.user_id)}
-                    className="rounded"
-                  />
-                  <label htmlFor={userData.user_id} className="flex-1 cursor-pointer">
-                    <div className="font-medium">{userData.name}</div>
-                    <div className="text-sm text-muted-foreground">{userData.email}</div>
-                  </label>
-                </div>
-              ))}
+              {users.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No users available for assignment</p>
+              ) : (
+                users.map((userData) => (
+                  <div key={userData.user_id} className="flex items-center space-x-2 py-2">
+                    <input
+                      type="checkbox"
+                      id={userData.user_id}
+                      checked={selectedUsers.includes(userData.user_id)}
+                      onChange={() => toggleUserSelection(userData.user_id)}
+                      className="rounded"
+                    />
+                    <label htmlFor={userData.user_id} className="flex-1 cursor-pointer">
+                      <div className="font-medium">{userData.name}</div>
+                      <div className="text-sm text-muted-foreground">{userData.email}</div>
+                    </label>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

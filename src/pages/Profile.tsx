@@ -13,6 +13,7 @@ import { WorkoutTracker } from "@/components/WorkoutTracker";
 import { ProgressReports } from "@/components/ProgressReports";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { AssignedWorkoutPlans } from "@/components/AssignedWorkoutPlans";
+import { UserWorkoutPlans } from "@/components/UserWorkoutPlans";
 
 const Profile = () => {
   const { user, signOut, loading } = useAuth();
@@ -56,9 +57,10 @@ const Profile = () => {
           </div>
           
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="assigned-plans">My Plans</TabsTrigger>
+              <TabsTrigger value="assigned-plans">Trainer Plans</TabsTrigger>
+              <TabsTrigger value="my-plans">My Plans</TabsTrigger>
               <TabsTrigger value="workouts">Workouts</TabsTrigger>
               <TabsTrigger value="progress">Progress</TabsTrigger>
               <TabsTrigger value="subscription">Subscription</TabsTrigger>
@@ -70,6 +72,10 @@ const Profile = () => {
             
             <TabsContent value="assigned-plans" className="mt-6">
               <AssignedWorkoutPlans />
+            </TabsContent>
+            
+            <TabsContent value="my-plans" className="mt-6">
+              <UserWorkoutPlans />
             </TabsContent>
             
             <TabsContent value="workouts" className="mt-6">
