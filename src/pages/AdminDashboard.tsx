@@ -12,9 +12,10 @@ import { Shield, Users, Dumbbell, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, refreshUserRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
   useEffect(() => {
     console.log('AdminDashboard - Auth state:', { 
@@ -24,30 +25,46 @@ const AdminDashboard = () => {
       userEmail: user?.email 
     });
     
-    // Don't redirect while still loading
-    if (loading) {
-      return;
-    }
+    const checkAccess = async () => {
+      // Don't redirect while still loading
+      if (loading) {
+        return;
+      }
 
-    // If no user, redirect to auth
-    if (!user) {
-      console.log('No user found, redirecting to auth');
-      navigate('/auth');
-      return;
-    }
+      // If no user, redirect to auth
+      if (!user) {
+        console.log('No user found, redirecting to auth');
+        navigate('/auth');
+        return;
+      }
 
-    // If user role is loaded and not admin, show error and redirect
-    if (userRole && userRole !== 'admin') {
-      console.log('User is not admin, role:', userRole);
-      toast({
-        title: "Access Denied",
-        description: "You don't have admin privileges",
-        variant: "destructive"
-      });
-      navigate('/');
-      return;
-    }
-  }, [user, userRole, loading, navigate, toast]);
+      // If user exists but no role yet, try to refresh it
+      if (user && userRole === null) {
+        console.log('No role found, refreshing user role...');
+        await refreshUserRole();
+        return;
+      }
+
+      // If user role is loaded and not admin, show error and redirect
+      if (userRole && userRole !== 'admin') {
+        console.log('User is not admin, role:', userRole);
+        toast({
+          title: "Access Denied",
+          description: "You don't have admin privileges",
+          variant: "destructive"
+        });
+        navigate('/');
+        return;
+      }
+
+      // If we get here and userRole is 'admin', we're good
+      if (userRole === 'admin') {
+        setIsCheckingAccess(false);
+      }
+    };
+
+    checkAccess();
+  }, [user, userRole, loading, navigate, toast, refreshUserRole]);
 
   // Show loading while auth is initializing
   if (loading) {
@@ -62,14 +79,14 @@ const AdminDashboard = () => {
   }
 
   // Show loading while user role is being fetched
-  if (user && userRole === null) {
+  if (user && (userRole === null || isCheckingAccess)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Shield className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Checking admin access...</p>
           <p className="text-sm text-muted-foreground mt-2">
-            User: {user.email} | Role: Loading...
+            User: {user.email} | Role: {userRole || 'Loading...'}
           </p>
         </div>
       </div>
@@ -77,23 +94,8 @@ const AdminDashboard = () => {
   }
 
   // If not authenticated or not admin, don't render anything (redirect will happen)
-  if (!user || (userRole && userRole !== 'admin')) {
+  if (!user || userRole !== 'admin') {
     return null;
-  }
-
-  // Show access denied if user role is loaded but not admin
-  if (userRole && userRole !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <p className="text-muted-foreground">Access Denied</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            You don't have admin privileges
-          </p>
-        </div>
-      </div>
-    );
   }
 
   return (

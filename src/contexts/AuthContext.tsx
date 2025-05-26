@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +45,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       console.log('Fetching user role for:', targetUserId);
+      
+      // Clear any existing role first
+      setUserRole(null);
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -100,7 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(currentUser);
         
         if (currentUser) {
-          // Fetch role immediately for the new user
+          // Force refresh role when user changes
           setTimeout(() => {
             if (mounted) {
               refreshUserRole(currentUser.id);
@@ -210,6 +215,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear state immediately
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      setSubscription(null);
       
       toast({
         title: "Signed out successfully",
