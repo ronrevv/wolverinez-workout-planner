@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Dumbbell, Menu, X, User, Shield, Award, Calculator, FileText, Target } from 'lucide-react';
+import { Dumbbell, Menu, X, User, Shield, Award, Calculator, FileText, Target, Database } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +51,7 @@ export const Navbar = () => {
 
   const adminNavItems = [
     { to: '/admin', label: 'Admin', icon: Shield },
+    { to: '/demo-setup', label: 'Demo Setup', icon: Database },
   ];
 
   const trainerNavItems = [

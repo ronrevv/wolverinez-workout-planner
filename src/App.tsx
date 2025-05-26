@@ -16,6 +16,7 @@ import DietRequest from "./pages/DietRequest";
 import BMICalculator from "./pages/BMICalculator";
 import WorkoutPlans from "./pages/WorkoutPlans";
 import NotFound from "./pages/NotFound";
+import DemoSetup from "./pages/DemoSetup";
 import { AuthProvider } from "./contexts/AuthContext";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/trainer" element={<TrainerDashboard />} />
             <Route path="/my-plans" element={<MyPlans />} />
+            <Route path="/demo-setup" element={<DemoSetup />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/advanced-plans" element={<AdvancedPlans />} />
