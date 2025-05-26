@@ -8,12 +8,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Dumbbell, Plus, User, Trash } from "lucide-react";
 import { motion } from "framer-motion";
+import type { Json } from "@/integrations/supabase/types";
 
 interface UserPlan {
   id: string;
   name: string;
   description: string | null;
-  exercises: any[];
+  exercises: Json;
   level: number | null;
   fitness_goal: string | null;
   duration_weeks: number | null;
