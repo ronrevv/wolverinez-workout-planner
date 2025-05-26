@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UserCheck, UserX, FileText, Shield, AlertCircle, Users } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface UserAccess {
   id: string;
@@ -34,61 +33,64 @@ const UserAccessManager = () => {
 
   const loadUsers = async () => {
     try {
-      // First get all user access records
-      const { data: accessData, error: accessError } = await supabase
-        .from('user_access_control')
-        .select('*');
-
-      if (accessError) throw accessError;
-
-      // Get all users from user_profiles to get their details
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('user_id, name');
-
-      if (profilesError) throw profilesError;
-
-      // Get all subscribers to get email addresses
+      console.log('Loading users for admin dashboard...');
+      
+      // Get all subscribers first (these are the users)
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('user_id, email');
 
-      if (subscribersError) throw subscribersError;
+      if (subscribersError) {
+        console.error('Error loading subscribers:', subscribersError);
+        throw subscribersError;
+      }
+
+      console.log('Subscribers loaded:', subscribersData?.length || 0);
+
+      // Get user profiles for names
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, name');
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        // Continue without profiles if there's an error
+      }
+
+      // Get existing access control records
+      const { data: accessData, error: accessError } = await supabase
+        .from('user_access_control')
+        .select('*');
+
+      if (accessError) {
+        console.error('Error loading access control:', accessError);
+        // Continue without access control if there's an error
+      }
 
       // Combine the data
-      const usersWithAccess = accessData?.map(access => {
-        const profile = profilesData?.find(p => p.user_id === access.user_id);
-        const subscriber = subscribersData?.find(s => s.user_id === access.user_id);
+      const combinedUsers = subscribersData?.map(subscriber => {
+        const profile = profilesData?.find(p => p.user_id === subscriber.user_id);
+        const accessControl = accessData?.find(a => a.user_id === subscriber.user_id);
         
         return {
-          ...access,
-          user_name: profile?.name || 'Unknown',
-          user_email: subscriber?.email || 'Unknown'
-        };
-      }) || [];
-
-      // Also get users who don't have access records yet
-      const existingUserIds = new Set(accessData?.map(a => a.user_id) || []);
-      const usersWithoutAccess = subscribersData?.filter(s => !existingUserIds.has(s.user_id)).map(subscriber => {
-        const profile = profilesData?.find(p => p.user_id === subscriber.user_id);
-        return {
-          id: '',
+          id: accessControl?.id || '',
           user_id: subscriber.user_id,
-          has_site_access: true, // Default access
-          google_docs_file_id: null,
-          access_granted_at: new Date().toISOString(),
-          access_revoked_at: null,
-          user_name: profile?.name || 'Unknown',
-          user_email: subscriber.email
+          user_email: subscriber.email,
+          user_name: profile?.name || 'Unknown User',
+          has_site_access: accessControl?.has_site_access ?? true,
+          google_docs_file_id: accessControl?.google_docs_file_id || null,
+          access_granted_at: accessControl?.access_granted_at || new Date().toISOString(),
+          access_revoked_at: accessControl?.access_revoked_at || null
         };
       }) || [];
 
-      setUsers([...usersWithAccess, ...usersWithoutAccess]);
+      console.log('Combined users:', combinedUsers);
+      setUsers(combinedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
         title: "Error",
-        description: "Failed to load users",
+        description: "Failed to load users. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -204,71 +206,78 @@ const UserAccessManager = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            User Access Management
+            User Access Management ({users.length} users)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Access Status</TableHead>
-                <TableHead>Google Docs</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.user_id}>
-                  <TableCell className="font-medium">{user.user_name}</TableCell>
-                  <TableCell>{user.user_email}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.has_site_access ? "default" : "destructive"}>
-                      {user.has_site_access ? (
-                        <UserCheck className="h-3 w-3 mr-1" />
-                      ) : (
-                        <UserX className="h-3 w-3 mr-1" />
-                      )}
-                      {user.has_site_access ? 'Active' : 'Revoked'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.google_docs_file_id ? (
-                      <Badge variant="outline">
-                        <FileText className="h-3 w-3 mr-1" />
-                        Linked
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        No File
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant={user.has_site_access ? "destructive" : "default"}
-                        onClick={() => toggleUserAccess(user.user_id, user.has_site_access)}
-                      >
-                        {user.has_site_access ? 'Revoke' : 'Grant'} Access
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateGoogleDocsFile(user.user_id)}
-                        disabled={!googleDocsFileId.trim()}
-                      >
-                        Link Docs
-                      </Button>
-                    </div>
-                  </TableCell>
+          {users.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No users found in the system.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Access Status</TableHead>
+                  <TableHead>Google Docs</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.user_id}>
+                    <TableCell className="font-medium">{user.user_name}</TableCell>
+                    <TableCell>{user.user_email}</TableCell>
+                    <TableCell>
+                      <Badge variant={user.has_site_access ? "default" : "destructive"}>
+                        {user.has_site_access ? (
+                          <UserCheck className="h-3 w-3 mr-1" />
+                        ) : (
+                          <UserX className="h-3 w-3 mr-1" />
+                        )}
+                        {user.has_site_access ? 'Active' : 'Revoked'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.google_docs_file_id ? (
+                        <Badge variant="outline">
+                          <FileText className="h-3 w-3 mr-1" />
+                          Linked
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          No File
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant={user.has_site_access ? "destructive" : "default"}
+                          onClick={() => toggleUserAccess(user.user_id, user.has_site_access)}
+                        >
+                          {user.has_site_access ? 'Revoke' : 'Grant'} Access
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateGoogleDocsFile(user.user_id)}
+                          disabled={!googleDocsFileId.trim()}
+                        >
+                          Link Docs
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

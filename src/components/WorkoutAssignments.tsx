@@ -70,17 +70,7 @@ const WorkoutAssignments = () => {
       console.log('Loaded plans:', plansData?.length || 0);
       setWorkoutPlans(plansData || []);
 
-      // Load all user profiles
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('user_id, name');
-
-      if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
-        throw profilesError;
-      }
-
-      // Load all subscribers
+      // Load users from subscribers table (these are the actual users)
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('user_id, email');
@@ -90,33 +80,26 @@ const WorkoutAssignments = () => {
         throw subscribersError;
       }
 
-      // Load user roles to exclude admins and trainers
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
+      // Load user profiles for names
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, name');
 
-      if (rolesError) {
-        console.error('Error loading user roles:', rolesError);
-        // Continue without filtering by roles if there's an error
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        // Continue without names if profiles fail
       }
 
-      // Create a set of admin/trainer user IDs to exclude
-      const adminTrainerIds = new Set(
-        userRoles?.filter(role => role.role === 'admin' || role.role === 'trainer')
-          .map(role => role.user_id) || []
-      );
-
-      // Combine user data and exclude admins/trainers and current user
-      const combinedUsers = profilesData?.map(profile => {
-        const subscriber = subscribersData?.find(s => s.user_id === profile.user_id);
+      // Combine user data and exclude current user
+      const combinedUsers = subscribersData?.map(subscriber => {
+        const profile = profilesData?.find(p => p.user_id === subscriber.user_id);
         return {
-          user_id: profile.user_id,
-          name: profile.name || 'Unknown',
-          email: subscriber?.email || 'Unknown'
+          user_id: subscriber.user_id,
+          name: profile?.name || 'Unknown User',
+          email: subscriber.email
         };
       }).filter(userData => 
         userData.user_id !== user?.id && // Exclude current user
-        !adminTrainerIds.has(userData.user_id) && // Exclude admins and trainers
         userData.email !== 'Unknown' // Exclude users without email
       ) || [];
 
@@ -201,6 +184,15 @@ const WorkoutAssignments = () => {
       return;
     }
 
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to assign workout plans",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setAssigning(true);
     try {
       console.log('Assigning workout plan:', selectedPlan, 'to users:', selectedUsers);
@@ -208,23 +200,26 @@ const WorkoutAssignments = () => {
       const assignments = selectedUsers.map(userId => ({
         workout_plan_id: selectedPlan,
         assigned_to_user: userId,
-        assigned_by: user?.id,
-        notes: assignmentNotes,
+        assigned_by: user.id,
+        notes: assignmentNotes || null,
         status: 'active'
       }));
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('workout_plan_assignments')
-        .insert(assignments);
+        .insert(assignments)
+        .select();
 
       if (error) {
         console.error('Error inserting assignments:', error);
         throw error;
       }
 
+      console.log('Assignments created successfully:', data);
+
       toast({
         title: "Success",
-        description: `Workout plan assigned to ${selectedUsers.length} user(s)`,
+        description: `Workout plan assigned to ${selectedUsers.length} user(s) successfully!`,
       });
 
       // Reset form
@@ -298,7 +293,7 @@ const WorkoutAssignments = () => {
           </div>
 
           <div>
-            <Label>Select Users</Label>
+            <Label>Select Users ({users.length} available)</Label>
             <div className="border rounded-lg p-4 max-h-60 overflow-y-auto mt-2">
               {users.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
@@ -353,7 +348,7 @@ const WorkoutAssignments = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Recent Assignments
+            Recent Assignments ({assignments.length})
           </CardTitle>
         </CardHeader>
         <CardContent>

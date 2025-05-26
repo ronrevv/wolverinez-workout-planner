@@ -44,6 +44,7 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     await signOut();
+    setIsOpen(false);
   };
 
   return (
@@ -51,7 +52,7 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2" onClick={() => setIsOpen(false)}>
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -65,7 +66,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -84,7 +85,7 @@ export function Navbar() {
           </div>
 
           {/* Right side items */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <ThemeToggle />
             
             {user ? (
@@ -94,7 +95,7 @@ export function Navbar() {
                   <Link to="/admin">
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
-                      Admin
+                      <span className="hidden lg:inline">Admin</span>
                     </Button>
                   </Link>
                 )}
@@ -103,7 +104,7 @@ export function Navbar() {
                   <Link to="/trainer">
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
                       <Award className="h-4 w-4" />
-                      Trainer
+                      <span className="hidden lg:inline">Trainer</span>
                     </Button>
                   </Link>
                 )}
@@ -111,7 +112,7 @@ export function Navbar() {
                 <Link to="/my-plans">
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
-                    My Plans
+                    <span className="hidden lg:inline">My Plans</span>
                   </Button>
                 </Link>
 
@@ -120,14 +121,14 @@ export function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
+                      <span className="hidden xl:inline">{user.email?.split('@')[0]}</span>
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.email}</p>
+                        <p className="text-sm font-medium leading-none truncate">{user.email}</p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs text-muted-foreground">Role:</span>
                           <Badge variant={getRoleColor(userRole || 'user')} className="text-xs">
@@ -202,8 +203,9 @@ export function Navbar() {
               {user ? (
                 <div className="flex flex-col space-y-2 pt-2 border-t border-border/40">
                   <div className="px-3 py-2">
+                    <div className="text-sm font-medium mb-1 truncate">{user.email}</div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Role:</span>
+                      <span className="text-xs text-muted-foreground">Role:</span>
                       <Badge variant={getRoleColor(userRole || 'user')} className="text-xs">
                         {userRole || 'user'}
                       </Badge>
@@ -246,10 +248,7 @@ export function Navbar() {
                     variant="ghost" 
                     size="sm" 
                     className="w-full justify-start"
-                    onClick={() => {
-                      handleSignOut();
-                      setIsOpen(false);
-                    }}
+                    onClick={handleSignOut}
                   >
                     Sign Out
                   </Button>
