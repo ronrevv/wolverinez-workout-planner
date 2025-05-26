@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,53 +14,86 @@ import { useToast } from "@/hooks/use-toast";
 const AdminDashboard = () => {
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
-  const [checkingAccess, setCheckingAccess] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('AdminDashboard - Auth state:', { user: !!user, userRole, loading });
+    console.log('AdminDashboard - Auth state:', { 
+      user: !!user, 
+      userRole, 
+      loading,
+      userEmail: user?.email 
+    });
     
-    if (!loading) {
-      if (!user) {
-        console.log('No user, redirecting to auth');
-        navigate('/auth');
-        return;
-      }
+    // Don't redirect while still loading
+    if (loading) {
+      return;
+    }
 
-      if (userRole !== null) {
-        console.log('Checking admin access for role:', userRole);
-        if (userRole !== 'admin') {
-          toast({
-            title: "Access Denied",
-            description: "You don't have admin privileges",
-            variant: "destructive"
-          });
-          navigate('/');
-          return;
-        }
-        setCheckingAccess(false);
-      }
+    // If no user, redirect to auth
+    if (!user) {
+      console.log('No user found, redirecting to auth');
+      navigate('/auth');
+      return;
+    }
+
+    // If user role is loaded and not admin, show error and redirect
+    if (userRole && userRole !== 'admin') {
+      console.log('User is not admin, role:', userRole);
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin privileges",
+        variant: "destructive"
+      });
+      navigate('/');
+      return;
     }
   }, [user, userRole, loading, navigate, toast]);
 
-  if (loading || checkingAccess) {
+  // Show loading while auth is initializing
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Shield className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {loading ? 'Loading...' : 'Checking admin access...'}
-          </p>
+          <p className="text-muted-foreground">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while user role is being fetched
+  if (user && userRole === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Checking admin access...</p>
           <p className="text-sm text-muted-foreground mt-2">
-            User: {user ? 'Authenticated' : 'Not authenticated'} | Role: {userRole || 'Loading...'}
+            User: {user.email} | Role: Loading...
           </p>
         </div>
       </div>
     );
   }
 
-  if (!user || userRole !== 'admin') {
+  // If not authenticated or not admin, don't render anything (redirect will happen)
+  if (!user || (userRole && userRole !== 'admin')) {
     return null;
+  }
+
+  // Show access denied if user role is loaded but not admin
+  if (userRole && userRole !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground">Access Denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don't have admin privileges
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

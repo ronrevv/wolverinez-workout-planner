@@ -34,28 +34,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [subscription, setSubscription] = useState<any>(null);
   const { toast } = useToast();
 
-  const refreshUserRole = async () => {
-    if (!user) {
-      setUserRole(null);
+  const refreshUserRole = async (userId?: string) => {
+    const targetUserId = userId || user?.id;
+    if (!targetUserId) {
+      console.log('No user ID available for role fetch');
+      setUserRole('user');
       return;
     }
     
     try {
-      console.log('Fetching user role for:', user.id);
+      console.log('Fetching user role for:', targetUserId);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .single();
       
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user role:', error);
-        setUserRole('user'); // Default to 'user' if there's an error
+      if (error) {
+        console.log('No role found, defaulting to user:', error.message);
+        setUserRole('user');
         return;
       }
       
       const role = data?.role || 'user';
-      console.log('User role fetched:', role);
+      console.log('User role fetched successfully:', role);
       setUserRole(role);
     } catch (error) {
       console.error('Error refreshing user role:', error);
@@ -85,43 +87,72 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event, !!session);
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
         
-        if (session?.user) {
-          // Use setTimeout to avoid blocking the auth callback
+        if (currentUser) {
+          // Fetch role immediately for the new user
           setTimeout(() => {
-            refreshSubscription();
-            refreshUserRole();
+            if (mounted) {
+              refreshUserRole(currentUser.id);
+              refreshSubscription();
+            }
           }, 100);
         } else {
           setSubscription(null);
           setUserRole(null);
         }
-        setLoading(false);
+        
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', !!session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setTimeout(() => {
-          refreshSubscription();
-          refreshUserRole();
-        }, 100);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        console.log('Initial session check:', !!session);
+        if (mounted) {
+          setSession(session);
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+          
+          if (currentUser) {
+            await refreshUserRole(currentUser.id);
+            await refreshSubscription();
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, name: string) => {
