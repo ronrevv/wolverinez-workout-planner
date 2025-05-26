@@ -212,7 +212,7 @@ const ImprovedWorkoutPlanner = () => {
           name: planName,
           description: planDescription || '',
           created_by: user.id,
-          exercises: workoutDays,
+          exercises: workoutDays as any, // Cast to any to satisfy Json type
           duration_weeks: durationWeeks,
           difficulty_level: difficultyLevel,
           target_muscle_groups: workoutDays
